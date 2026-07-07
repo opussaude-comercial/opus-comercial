@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OPUS Comercial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --navy:#0F2A3D; --navy-light:#173B52; --amber:#E8A33D; --amber-dark:#C9862A;
+  --bg:#F5F6F4; --surface:#FFFFFF; --border:#E1E5E4; --text:#1B2530; --muted:#6B7785;
+  --success:#2F8F5B; --success-bg:#E6F4EC; --danger:#C0463C; --danger-bg:#FBEAE8;
+  --warn:#B9862C; --warn-bg:#FBF2E1; --info:#2F6F8F; --info-bg:#E7F1F5;
+  --radius:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;}
+h1,h2,h3,.brand{font-family:'Space Grotesk',sans-serif;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;font-size:14px;}
+::placeholder{color:#A3ACB4;}
+
+/* ---------- LOGIN ---------- */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,var(--navy) 0%,var(--navy-light) 55%,#1E4E67 100%);padding:20px;}
+.login-card{background:var(--surface);border-radius:16px;padding:40px 36px;width:100%;max-width:380px;box-shadow:0 30px 60px rgba(0,0,0,.35);}
+.login-card .brand{font-size:22px;font-weight:700;color:var(--navy);letter-spacing:.3px;}
+.login-card .brand span{color:var(--amber);}
+.login-sub{color:var(--muted);font-size:13px;margin-top:4px;margin-bottom:28px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:#FAFBFA;transition:border-color .15s;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--navy-light);background:#fff;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;border:none;font-weight:600;font-size:13px;transition:transform .1s, box-shadow .15s;}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--navy);color:#fff;}
+.btn-primary:hover{background:var(--navy-light);}
+.btn-amber{background:var(--amber);color:var(--navy);}
+.btn-amber:hover{background:var(--amber-dark);}
+.btn-ghost{background:transparent;color:var(--navy);border:1px solid var(--border);}
+.btn-ghost:hover{background:#EFF1F0;}
+.btn-danger{background:var(--danger-bg);color:var(--danger);}
+.btn-danger:hover{background:#F5D6D2;}
+.btn-block{width:100%;}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.login-error{background:var(--danger-bg);color:var(--danger);padding:10px 12px;border-radius:8px;font-size:12.5px;margin-bottom:16px;}
+.login-toggle{text-align:center;margin-top:18px;font-size:12.5px;color:var(--muted);}
+.login-toggle a{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:none;}
+
+/* ---------- APP SHELL ---------- */
+#app-screen{display:none;min-height:100vh;}
+.shell{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--navy);color:#fff;display:flex;flex-direction:column;flex-shrink:0;}
+.sidebar .brand{padding:24px 22px 18px;font-size:18px;font-weight:700;border-bottom:1px solid rgba(255,255,255,.1);}
+.sidebar .brand span{color:var(--amber);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 22px;color:rgba(255,255,255,.72);font-size:13.5px;font-weight:500;cursor:pointer;border-left:3px solid transparent;transition:.15s;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,.09);color:#fff;border-left-color:var(--amber);}
+.nav-item .ic{width:18px;text-align:center;font-size:14px;}
+.sidebar-footer{margin-top:auto;padding:16px 22px;border-top:1px solid rgba(255,255,255,.1);}
+.user-chip{font-size:12.5px;color:rgba(255,255,255,.85);margin-bottom:8px;}
+.user-chip .role-badge{display:inline-block;margin-top:3px;font-size:10.5px;background:var(--amber);color:var(--navy);padding:2px 7px;border-radius:20px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;}
+.main{flex:1;min-width:0;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;}
+.topbar h1{font-size:19px;font-weight:600;color:var(--navy);}
+.content{padding:28px 32px;max-width:1200px;}
+
+/* ---------- COMPONENTS ---------- */
+.cards-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:26px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.kpi-card .kpi-num{font-family:'Space Grotesk',sans-serif;font-size:28px;font-weight:700;color:var(--navy);}
+.kpi-card .kpi-label{font-size:12px;color:var(--muted);margin-top:4px;font-weight:500;}
+.kpi-card.accent{border-left:3px solid var(--amber);}
+
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:22px;}
+.panel-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.panel-head h2{font-size:15px;font-weight:600;color:var(--navy);}
+.panel-body{padding:20px;}
+
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);padding:10px 20px;background:#FAFBFA;border-bottom:1px solid var(--border);}
+td{padding:12px 20px;border-bottom:1px solid var(--border);font-size:13.5px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#FAFBFA;}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.tag-info{background:var(--info-bg);color:var(--info);}
+.tag-warn{background:var(--warn-bg);color:var(--warn);}
+.tag-success{background:var(--success-bg);color:var(--success);}
+.tag-danger{background:var(--danger-bg);color:var(--danger);}
+.tag-muted{background:#EEF0EF;color:var(--muted);}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);padding:0 20px;}
+.tab-btn{padding:12px 16px;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--amber);}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,42,61,.55);align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;z-index:100;}
+.modal-overlay.open{display:flex;}
+.modal{background:#fff;border-radius:14px;width:100%;max-width:560px;box-shadow:0 30px 60px rgba(0,0,0,.3);}
+.modal.wide{max-width:760px;}
+.modal-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-head h3{font-size:16px;color:var(--navy);}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted);line-height:1;}
+.modal-body{padding:22px 24px;max-height:70vh;overflow-y:auto;}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-state .ic{font-size:30px;margin-bottom:10px;}
+
+.itens-line{display:grid;grid-template-columns:2fr 90px 110px 90px 32px;gap:8px;align-items:center;margin-bottom:8px;font-size:13px;}
+.itens-line input,.itens-line select{padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;}
+.total-box{background:#FAFBFA;border:1px dashed var(--border);border-radius:8px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+.total-box .val{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;color:var(--navy);}
+
+.toast-wrap{position:fixed;top:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--navy);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 20px rgba(0,0,0,.2);animation:slidein .2s ease;}
+.toast.err{background:var(--danger);}
+.toast.ok{background:var(--success);}
+@keyframes slidein{from{transform:translateX(20px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+.muted{color:var(--muted);}
+.small{font-size:12px;}
+.mt8{margin-top:8px;}.mt16{margin-top:16px;}.mb8{margin-bottom:8px;}
+.flex{display:flex;align-items:center;}
+.gap8{gap:8px;}
+.actions-cell{display:flex;gap:6px;}
+</style>
+</head>
+<body>
+
+<div id="toast-wrap" class="toast-wrap"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="brand">OPUS <span>Comercial</span></div>
+    <div class="login-sub" id="login-sub">Entre com seu acesso para continuar</div>
+    <div id="login-error"></div>
+    <form id="login-form">
+      <div class="field"><label>E-mail</label><input type="email" id="login-email" required placeholder="voce@opussaude.com.br"></div>
+      <div class="field"><label>Senha</label><input type="password" id="login-senha" required placeholder="••••••••" minlength="6"></div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-submit">Entrar</button>
+    </form>
+    <div class="login-toggle small">Acesso apenas por convite. Fale com o administrador do sistema para criar seu login.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">OPUS <span>Comercial</span></div>
+      <nav id="nav-items"></nav>
+      <div class="sidebar-footer">
+        <div class="user-chip" id="user-chip"></div>
+        <button class="btn btn-ghost btn-sm btn-block" onclick="logout()" style="color:#fff;border-color:rgba(255,255,255,.25)">Sair</button>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="topbar"><h1 id="page-title">Dashboard</h1></div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ==================== CONFIG ==================== */
+const SUPA_URL = "https://qkdfyewfjxzsffbxaznd.supabase.co";
+const SUPA_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrZGZ5ZXdmanh6c2ZmYnhhem5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NDE3NjksImV4cCI6MjA5OTAxNzc2OX0.M0WGJa48WUm2YzmnfJd6TXSufF7Yzk90XT1C7iCGcEs";
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const STATUS_CLIENTE = {
+  contato_inicial:{label:"Contato inicial", tag:"tag-info"},
+  em_negociacao:{label:"Em negociação", tag:"tag-warn"},
+  proposta_enviada:{label:"Proposta enviada", tag:"tag-warn"},
+  fechado:{label:"Fechado", tag:"tag-success"},
+  sem_retorno:{label:"Sem retorno", tag:"tag-muted"},
+  perdido:{label:"Perdido", tag:"tag-danger"},
+};
+const STATUS_PROPOSTA = {
+  rascunho:{label:"Rascunho", tag:"tag-muted"},
+  enviada:{label:"Enviada", tag:"tag-warn"},
+  aceita:{label:"Aceita", tag:"tag-success"},
+  recusada:{label:"Recusada", tag:"tag-danger"},
+  expirada:{label:"Expirada", tag:"tag-muted"},
+};
+const TIPOS_SERVICO = ["PCMSO","PGR","LTCAT","AET","AEP","PCA","PPR","COORDENACAO_MEDICA","GESTAO_PSICOSSOCIAIS","OUTRO"];
+const TIPOS_SERVICO_LABEL = {PCMSO:"PCMSO",PGR:"PGR",LTCAT:"LTCAT",AET:"AET",AEP:"AEP",PCA:"PCA",PPR:"PPR",COORDENACAO_MEDICA:"Coordenação Médica",GESTAO_PSICOSSOCIAIS:"Gestão de Psicossociais",OUTRO:"Outro"};
+
+let state = { user:null, profile:null, view:"dashboard" };
+let cache = { exames:[], servicos:[], clientes:[], propostas:[] };
+
+/* ==================== HELPERS ==================== */
+function fmtMoney(v){ return (Number(v)||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function fmtDate(d){ if(!d) return "-"; const dt = new Date(d+(d.length===10?"T00:00:00":"")); return dt.toLocaleDateString('pt-BR'); }
+function toast(msg, type=""){
+  const wrap = document.getElementById('toast-wrap');
+  const t = document.createElement('div');
+  t.className = "toast "+type;
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(()=>t.remove(), 3800);
+}
+function el(id){ return document.getElementById(id); }
+function esc(s){ return (s===null||s===undefined) ? "" : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ==================== AUTH ==================== */
+el('login-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = el('login-email').value.trim();
+  const senha = el('login-senha').value;
+  const errBox = el('login-error');
+  errBox.innerHTML = "";
+  el('login-submit').textContent = "Aguarde...";
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+    if(error) throw error;
+  }catch(err){
+    errBox.innerHTML = `<div class="login-error">${esc(err.message || "Erro ao autenticar")}</div>`;
+  }finally{
+    el('login-submit').textContent = "Entrar";
+  }
+});
+
+async function logout(){
+  await sb.auth.signOut();
+  state.user = null; state.profile = null;
+  showLogin();
+}
+
+function showLogin(){
+  el('login-screen').style.display = "flex";
+  el('app-screen').style.display = "none";
+}
+
+async function showApp(){
+  el('login-screen').style.display = "none";
+  el('app-screen').style.display = "block";
+  renderNav();
+  await goTo("dashboard");
+}
+
+async function loadProfile(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if(!user){ showLogin(); return false; }
+  state.user = user;
+  let { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  if(error || !data){
+    toast("Perfil ainda não sincronizado, tente novamente em instantes.", "err");
+    return false;
+  }
+  state.profile = data;
+  return true;
+}
+
+sb.auth.onAuthStateChange(async (event, session)=>{
+  if(session && session.user){
+    const ok = await loadProfile();
+    if(ok) await showApp();
+  } else {
+    showLogin();
+  }
+});
+
+/* ==================== NAV ==================== */
+const NAV_CONFIG = [
+  {id:"dashboard", label:"Dashboard", ic:"◆", roles:["admin","comercial","financeiro"]},
+  {id:"clientes", label:"Clientes (CRM)", ic:"◈", roles:["admin","comercial"]},
+  {id:"catalogo", label:"Catálogo & Preços", ic:"◇", roles:["admin","financeiro"]},
+  {id:"propostas", label:"Propostas", ic:"◉", roles:["admin","comercial"]},
+  {id:"contratos", label:"Contratos", ic:"▣", roles:["admin","comercial"]},
+  {id:"usuarios", label:"Usuários", ic:"◎", roles:["admin"]},
+];
+function renderNav(){
+  const role = state.profile.role;
+  const items = NAV_CONFIG.filter(n => n.roles.includes(role));
+  el('nav-items').innerHTML = items.map(n => `
+    <div class="nav-item ${state.view===n.id?'active':''}" onclick="goTo('${n.id}')">
+      <span class="ic">${n.ic}</span><span>${n.label}</span>
+    </div>`).join("");
+  el('user-chip').innerHTML = `${esc(state.profile.nome)}<br><span class="role-badge">${state.profile.role}</span>`;
+}
+
+async function goTo(view){
+  state.view = view;
+  renderNav();
+  const titles = {dashboard:"Dashboard",clientes:"Clientes · CRM de Prospecção",catalogo:"Catálogo & Precificação",propostas:"Propostas Comerciais",contratos:"Contratos de Prestação de Serviço",usuarios:"Usuários do Sistema"};
+  el('page-title').textContent = titles[view] || "";
+  el('content').innerHTML = `<div class="empty-state">Carregando...</div>`;
+  try{
+    if(view==="dashboard") await renderDashboard();
+    else if(view==="clientes") await renderClientes();
+    else if(view==="catalogo") await renderCatalogo();
+    else if(view==="propostas") await renderPropostas();
+    else if(view==="contratos") await renderContratos();
+    else if(view==="usuarios") await renderUsuarios();
+  }catch(err){
+    console.error(err);
+    el('content').innerHTML = `<div class="empty-state">Erro ao carregar: ${esc(err.message||err)}</div>`;
+  }
+}
+
+/* ==================== DASHBOARD ==================== */
+async function renderDashboard(){
+  const { data: clientes } = await sb.from('clientes_prospeccao').select('status');
+  const { data: propostas } = await sb.from('propostas').select('status,valor_total,tipo');
+  const c = clientes || []; const p = propostas || [];
+  const total = c.length;
+  const fechado = c.filter(x=>x.status==='fechado').length;
+  const aguardando = c.filter(x=>['contato_inicial','em_negociacao','proposta_enviada'].includes(x.status)).length;
+  const perdido = c.filter(x=>['sem_retorno','perdido'].includes(x.status)).length;
+  const propAceitas = p.filter(x=>x.status==='aceita');
+  const valorFechado = propAceitas.reduce((s,x)=>s+Number(x.valor_total||0),0);
+  const propAguardando = p.filter(x=>x.status==='enviada').length;
+
+  el('content').innerHTML = `
+    <div class="cards-row">
+      <div class="kpi-card"><div class="kpi-num">${total}</div><div class="kpi-label">Clientes em contato</div></div>
+      <div class="kpi-card accent"><div class="kpi-num">${fechado}</div><div class="kpi-label">Negócios fechados</div></div>
+      <div class="kpi-card"><div class="kpi-num">${aguardando}</div><div class="kpi-label">Aguardando retorno</div></div>
+      <div class="kpi-card"><div class="kpi-num">${perdido}</div><div class="kpi-label">Sem retorno / perdidos</div></div>
+    </div>
+    <div class="cards-row">
+      <div class="kpi-card"><div class="kpi-num">${p.length}</div><div class="kpi-label">Propostas geradas</div></div>
+      <div class="kpi-card"><div class="kpi-num">${propAguardando}</div><div class="kpi-label">Propostas aguardando resposta</div></div>
+      <div class="kpi-card accent"><div class="kpi-num">${fmtMoney(valorFechado)}</div><div class="kpi-label">Valor total fechado</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Funil de prospecção</h2></div>
+      <div class="panel-body">
+        ${Object.entries(STATUS_CLIENTE).map(([k,v])=>{
+          const n = c.filter(x=>x.status===k).length;
+          const pct = total ? Math.round(n/total*100) : 0;
+          return `<div class="mb8"><div class="flex" style="justify-content:space-between;font-size:12.5px;margin-bottom:4px;"><span>${v.label}</span><span class="muted">${n} (${pct}%)</span></div>
+          <div style="background:#EEF0EF;border-radius:6px;height:8px;overflow:hidden;"><div style="width:${pct}%;background:var(--amber);height:100%;"></div></div></div>`;
+        }).join("")}
+      </div>
+    </div>`;
+}
+
+/* ==================== CLIENTES / CRM ==================== */
+async function renderClientes(){
+  const { data, error } = await sb.from('clientes_prospeccao').select('*').order('created_at',{ascending:false});
+  if(error) throw error;
+  cache.clientes = data || [];
+  const canWrite = ['admin','comercial'].includes(state.profile.role);
+  el('content').innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Clientes em prospecção (${cache.clientes.length})</h2>
+        ${canWrite ? `<button class="btn btn-amber btn-sm" onclick="openClienteModal()">+ Novo contato</button>` : ""}
+      </div>
+      ${cache.clientes.length===0 ? `<div class="empty-state"><div class="ic">◈</div>Nenhum cliente cadastrado ainda.</div>` : `
+      <table>
+        <thead><tr><th>Empresa / Contato</th><th>Telefone</th><th>Origem</th><th>Status</th><th>Responsável</th><th>Data</th><th></th></tr></thead>
+        <tbody>
+        ${cache.clientes.map(c=>`
+          <tr>
+            <td><strong>${esc(c.nome_empresa)}</strong><br><span class="muted small">${esc(c.nome_contato||'')}</span></td>
+            <td>${esc(c.telefone||'-')}</td>
+            <td>${esc(c.origem||'-')}</td>
+            <td><span class="tag ${STATUS_CLIENTE[c.status]?.tag||'tag-muted'}">${STATUS_CLIENTE[c.status]?.label||c.status}</span></td>
+            <td class="small">${esc(c.responsavel_nome||'-')}</td>
+            <td class="small">${fmtDate(c.data_contato)}</td>
+            <td class="actions-cell">${canWrite?`<button class="btn btn-ghost btn-sm" onclick='openClienteModal(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Editar</button>`:''}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>`}
+    </div>
+    <div class="modal-overlay" id="cliente-modal">
+      <div class="modal">
+        <div class="modal-head"><h3 id="cliente-modal-title">Novo contato</h3><button class="modal-close" onclick="closeModal('cliente-modal')">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="cliente-id">
+          <div class="field"><label>Empresa</label><input id="cliente-empresa" placeholder="Nome da empresa"></div>
+          <div class="grid-2">
+            <div class="field"><label>Nome do contato</label><input id="cliente-contato" placeholder="Responsável na empresa"></div>
+            <div class="field"><label>Telefone</label><input id="cliente-telefone" placeholder="(94) 9...."></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>E-mail</label><input id="cliente-email" type="email"></div>
+            <div class="field"><label>Origem</label><input id="cliente-origem" placeholder="Indicação, Instagram, ligação..."></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Status</label><select id="cliente-status">${Object.entries(STATUS_CLIENTE).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join("")}</select></div>
+            <div class="field"><label>Data do contato</label><input id="cliente-data" type="date"></div>
+          </div>
+          <div class="field"><label>Observações</label><textarea id="cliente-obs" rows="3" placeholder="Detalhes da negociação..."></textarea></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('cliente-modal')">Cancelar</button>
+          <button class="btn btn-primary" onclick="saveCliente()">Salvar</button>
+        </div>
+      </div>
+    </div>`;
+}
+function openClienteModal(c){
+  el('cliente-modal-title').textContent = c ? "Editar contato" : "Novo contato";
+  el('cliente-id').value = c ? c.id : "";
+  el('cliente-empresa').value = c ? c.nome_empresa : "";
+  el('cliente-contato').value = c ? (c.nome_contato||"") : "";
+  el('cliente-telefone').value = c ? (c.telefone||"") : "";
+  el('cliente-email').value = c ? (c.email||"") : "";
+  el('cliente-origem').value = c ? (c.origem||"") : "";
+  el('cliente-status').value = c ? c.status : "contato_inicial";
+  el('cliente-data').value = c ? c.data_contato : new Date().toISOString().slice(0,10);
+  el('cliente-obs').value = c ? (c.observacoes||"") : "";
+  openModal('cliente-modal');
+}
+async function saveCliente(){
+  const id = el('cliente-id').value;
+  const payload = {
+    nome_empresa: el('cliente-empresa').value.trim(),
+    nome_contato: el('cliente-contato').value.trim(),
+    telefone: el('cliente-telefone').value.trim(),
+    email: el('cliente-email').value.trim(),
+    origem: el('cliente-origem').value.trim(),
+    status: el('cliente-status').value,
+    data_contato: el('cliente-data').value || null,
+    observacoes: el('cliente-obs').value.trim(),
+  };
+  if(!payload.nome_empresa){ toast("Informe o nome da empresa","err"); return; }
+  if(!id) payload.responsavel_id = state.user.id;
+  const q = id ? sb.from('clientes_prospeccao').update(payload).eq('id',id) : sb.from('clientes_prospeccao').insert(payload);
+  const { error } = await q;
+  if(error){ toast(error.message,"err"); return; }
+  toast("Cliente salvo com sucesso","ok");
+  closeModal('cliente-modal');
+  await renderClientes();
+}
+
+/* ==================== CATÁLOGO ==================== */
+let catalogoTab = "exames";
+async function renderCatalogo(){
+  const [{data:ex},{data:sv}] = await Promise.all([
+    sb.from('catalogo_exames').select('*').order('nome'),
+    sb.from('catalogo_servicos').select('*').order('tipo'),
+  ]);
+  cache.exames = ex || []; cache.servicos = sv || [];
+  drawCatalogo();
+}
+function drawCatalogo(){
+  const canWrite = ['admin','financeiro'].includes(state.profile.role);
+  el('content').innerHTML = `
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab-btn ${catalogoTab==='exames'?'active':''}" onclick="switchCatalogoTab('exames')">Exames (${cache.exames.length})</button>
+        <button class="tab-btn ${catalogoTab==='servicos'?'active':''}" onclick="switchCatalogoTab('servicos')">Serviços SST (${cache.servicos.length})</button>
+      </div>
+      <div class="panel-head">
+        <span class="muted small">Defina o custo e a margem — o valor final é calculado automaticamente.</span>
+        ${canWrite ? `<button class="btn btn-amber btn-sm" onclick="${catalogoTab==='exames'?'openExameModal()':'openServicoModal()'}">+ Novo ${catalogoTab==='exames'?'exame':'serviço'}</button>` : ""}
+      </div>
+      <div id="catalogo-table-wrap"></div>
+    </div>
+    <div class="modal-overlay" id="exame-modal">
+      <div class="modal">
+        <div class="modal-head"><h3 id="exame-modal-title">Novo exame</h3><button class="modal-close" onclick="closeModal('exame-modal')">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="exame-id">
+          <div class="field"><label>Nome do exame</label><input id="exame-nome" placeholder="Ex: Audiometria"></div>
+          <div class="grid-2">
+            <div class="field"><label>Custo (R$)</label><input id="exame-custo" type="number" step="0.01" oninput="previewCalc('exame')"></div>
+            <div class="field"><label>Margem (%)</label><input id="exame-margem" type="number" step="0.1" oninput="previewCalc('exame')"></div>
+          </div>
+          <div class="total-box"><span>Valor final de venda</span><span class="val" id="exame-preview">R$ 0,00</span></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('exame-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveExame()">Salvar</button></div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="servico-modal">
+      <div class="modal">
+        <div class="modal-head"><h3 id="servico-modal-title">Novo serviço</h3><button class="modal-close" onclick="closeModal('servico-modal')">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="servico-id">
+          <div class="field"><label>Tipo</label><select id="servico-tipo">${TIPOS_SERVICO.map(t=>`<option value="${t}">${TIPOS_SERVICO_LABEL[t]}</option>`).join("")}</select></div>
+          <div class="field"><label>Nome / descrição curta</label><input id="servico-nome" placeholder="Ex: PGR até 50 funcionários"></div>
+          <div class="field"><label>Faixa de funcionários (opcional)</label><input id="servico-faixa" placeholder="Ex: até 50 funcionários"></div>
+          <div class="grid-2">
+            <div class="field"><label>Custo (R$)</label><input id="servico-custo" type="number" step="0.01" oninput="previewCalc('servico')"></div>
+            <div class="field"><label>Margem (%)</label><input id="servico-margem" type="number" step="0.1" oninput="previewCalc('servico')"></div>
+          </div>
+          <div class="field"><label>Descrição / observações</label><textarea id="servico-desc" rows="2"></textarea></div>
+          <div class="total-box"><span>Valor final de venda</span><span class="val" id="servico-preview">R$ 0,00</span></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('servico-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveServico()">Salvar</button></div>
+      </div>
+    </div>`;
+  drawCatalogoTable();
+}
+function switchCatalogoTab(t){ catalogoTab = t; drawCatalogo(); }
+function drawCatalogoTable(){
+  const canWrite = ['admin','financeiro'].includes(state.profile.role);
+  const wrap = el('catalogo-table-wrap');
+  if(catalogoTab==='exames'){
+    wrap.innerHTML = cache.exames.length===0 ? `<div class="empty-state"><div class="ic">◇</div>Nenhum exame cadastrado.</div>` : `
+    <table><thead><tr><th>Exame</th><th>Custo</th><th>Margem</th><th>Valor final</th><th></th></tr></thead>
+    <tbody>${cache.exames.map(x=>`
+      <tr><td>${esc(x.nome)}</td><td>${fmtMoney(x.custo)}</td><td>${Number(x.margem_percentual)}%</td><td><strong>${fmtMoney(x.valor_final)}</strong></td>
+      <td class="actions-cell">${canWrite?`<button class="btn btn-ghost btn-sm" onclick='openExameModal(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Editar</button>`:''}</td></tr>`).join("")}</tbody></table>`;
+  } else {
+    wrap.innerHTML = cache.servicos.length===0 ? `<div class="empty-state"><div class="ic">◇</div>Nenhum serviço cadastrado.</div>` : `
+    <table><thead><tr><th>Tipo</th><th>Nome</th><th>Custo</th><th>Margem</th><th>Valor final</th><th></th></tr></thead>
+    <tbody>${cache.servicos.map(x=>`
+      <tr><td><span class="tag tag-info">${TIPOS_SERVICO_LABEL[x.tipo]||x.tipo}</span></td><td>${esc(x.nome)}${x.faixa_funcionarios?`<br><span class="muted small">${esc(x.faixa_funcionarios)}</span>`:''}</td><td>${fmtMoney(x.custo)}</td><td>${Number(x.margem_percentual)}%</td><td><strong>${fmtMoney(x.valor_final)}</strong></td>
+      <td class="actions-cell">${canWrite?`<button class="btn btn-ghost btn-sm" onclick='openServicoModal(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Editar</button>`:''}</td></tr>`).join("")}</tbody></table>`;
+  }
+}
+function previewCalc(kind){
+  const custo = parseFloat(el(kind+'-custo').value)||0;
+  const margem = parseFloat(el(kind+'-margem').value)||0;
+  el(kind+'-preview').textContent = fmtMoney(custo*(1+margem/100));
+}
+function openExameModal(x){
+  el('exame-modal-title').textContent = x ? "Editar exame" : "Novo exame";
+  el('exame-id').value = x?x.id:"";
+  el('exame-nome').value = x?x.nome:"";
+  el('exame-custo').value = x?x.custo:"";
+  el('exame-margem').value = x?x.margem_percentual:"";
+  previewCalc('exame');
+  openModal('exame-modal');
+}
+async function saveExame(){
+  const id = el('exame-id').value;
+  const payload = { nome: el('exame-nome').value.trim(), custo: parseFloat(el('exame-custo').value)||0, margem_percentual: parseFloat(el('exame-margem').value)||0 };
+  if(!payload.nome){ toast("Informe o nome do exame","err"); return; }
+  const q = id ? sb.from('catalogo_exames').update(payload).eq('id',id) : sb.from('catalogo_exames').insert(payload);
+  const { error } = await q;
+  if(error){ toast(error.message,"err"); return; }
+  toast("Exame salvo","ok"); closeModal('exame-modal'); await renderCatalogo();
+}
+function openServicoModal(x){
+  el('servico-modal-title').textContent = x ? "Editar serviço" : "Novo serviço";
+  el('servico-id').value = x?x.id:"";
+  el('servico-tipo').value = x?x.tipo:"PCMSO";
+  el('servico-nome').value = x?x.nome:"";
+  el('servico-faixa').value = x?(x.faixa_funcionarios||""):"";
+  el('servico-custo').value = x?x.custo:"";
+  el('servico-margem').value = x?x.margem_percentual:"";
+  el('servico-desc').value = x?(x.descricao||""):"";
+  previewCalc('servico');
+  openModal('servico-modal');
+}
+async function saveServico(){
+  const id = el('servico-id').value;
+  const payload = {
+    tipo: el('servico-tipo').value, nome: el('servico-nome').value.trim(), faixa_funcionarios: el('servico-faixa').value.trim(),
+    custo: parseFloat(el('servico-custo').value)||0, margem_percentual: parseFloat(el('servico-margem').value)||0, descricao: el('servico-desc').value.trim(),
+  };
+  if(!payload.nome){ toast("Informe o nome do serviço","err"); return; }
+  const q = id ? sb.from('catalogo_servicos').update(payload).eq('id',id) : sb.from('catalogo_servicos').insert(payload);
+  const { error } = await q;
+  if(error){ toast(error.message,"err"); return; }
+  toast("Serviço salvo","ok"); closeModal('servico-modal'); await renderCatalogo();
+}
+
+/* ==================== PROPOSTAS ==================== */
+let propostaItens = [];
+async function renderPropostas(){
+  const { data, error } = await sb.from('propostas').select('*').order('created_at',{ascending:false});
+  if(error) throw error;
+  cache.propostas = data || [];
+  el('content').innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Propostas (${cache.propostas.length})</h2>
+        <button class="btn btn-amber btn-sm" onclick="openPropostaModal()">+ Nova proposta</button>
+      </div>
+      ${cache.propostas.length===0 ? `<div class="empty-state"><div class="ic">◉</div>Nenhuma proposta gerada ainda.</div>` : `
+      <table><thead><tr><th>Destinatário</th><th>Tipo</th><th>Valor</th><th>Status</th><th>Data</th><th></th></tr></thead>
+      <tbody>${cache.propostas.map(p=>`
+        <tr>
+          <td><strong>${esc(p.nome_destinatario)}</strong></td>
+          <td class="small">${p.tipo==='empresa'?'Empresa (SST)':'Paciente (exames)'}</td>
+          <td>${fmtMoney(p.valor_total)}</td>
+          <td>
+            <select onchange="updatePropostaStatus('${p.id}', this.value)" style="border:none;background:none;font-weight:700;font-size:11px;text-transform:uppercase;">
+              ${Object.entries(STATUS_PROPOSTA).map(([k,v])=>`<option value="${k}" ${p.status===k?'selected':''}>${v.label}</option>`).join("")}
+            </select>
+          </td>
+          <td class="small">${fmtDate(p.created_at)}</td>
+          <td class="actions-cell">
+            <button class="btn btn-ghost btn-sm" onclick="gerarPdfProposta('${p.id}')">PDF</button>
+          </td>
+        </tr>`).join("")}</tbody></table>`}
+    </div>
+    <div class="modal-overlay" id="proposta-modal">
+      <div class="modal wide">
+        <div class="modal-head"><h3>Nova proposta comercial</h3><button class="modal-close" onclick="closeModal('proposta-modal')">&times;</button></div>
+        <div class="modal-body">
+          <div class="grid-2">
+            <div class="field"><label>Tipo de proposta</label>
+              <select id="prop-tipo" onchange="onPropTipoChange()">
+                <option value="empresa">Empresa (serviços SST)</option>
+                <option value="paciente_exames">Paciente (exames laboratoriais)</option>
+              </select>
+            </div>
+            <div class="field" id="prop-cliente-wrap">
+              <label>Cliente cadastrado (opcional)</label>
+              <select id="prop-cliente-id" onchange="onClienteSelecionado()">
+                <option value="">— Selecionar ou digitar manualmente —</option>
+                ${cache.clientes ? cache.clientes.map(c=>`<option value="${c.id}" data-nome="${esc(c.nome_empresa)}">${esc(c.nome_empresa)}</option>`).join(""):""}
+              </select>
+            </div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Nome do destinatário</label><input id="prop-nome" placeholder="Empresa ou paciente"></div>
+            <div class="field"><label>CNPJ / CPF</label><input id="prop-doc"></div>
+          </div>
+          <div class="grid-2">
+            <div class="field"><label>Telefone</label><input id="prop-tel"></div>
+            <div class="field"><label>E-mail</label><input id="prop-email" type="email"></div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+          <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;">Itens da proposta</label>
+          <div id="itens-list" class="mt8"></div>
+          <button class="btn btn-ghost btn-sm mt8" onclick="addItemLinha()">+ Adicionar item</button>
+          <div class="total-box"><span>Valor total da proposta</span><span class="val" id="prop-total">R$ 0,00</span></div>
+          <div class="field mt16"><label>Observações</label><textarea id="prop-obs" rows="2"></textarea></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal('proposta-modal')">Cancelar</button>
+          <button class="btn btn-primary" onclick="salvarProposta()">Salvar proposta</button>
+        </div>
+      </div>
+    </div>`;
+}
+function onPropTipoChange(){
+  el('prop-cliente-wrap').style.display = el('prop-tipo').value === 'empresa' ? 'block' : 'none';
+}
+function onClienteSelecionado(){
+  const opt = el('prop-cliente-id').selectedOptions[0];
+  if(opt && opt.value) el('prop-nome').value = opt.dataset.nome;
+}
+async function openPropostaModal(){
+  if(!cache.clientes || cache.clientes.length===0){
+    const { data } = await sb.from('clientes_prospeccao').select('id,nome_empresa');
+    cache.clientes = data || [];
+  }
+  if(!cache.exames || cache.exames.length===0){
+    const [{data:ex},{data:sv}] = await Promise.all([sb.from('catalogo_exames').select('*'), sb.from('catalogo_servicos').select('*')]);
+    cache.exames = ex||[]; cache.servicos = sv||[];
+  }
+  propostaItens = [];
+  el('prop-tipo').value = "empresa"; onPropTipoChange();
+  el('prop-nome').value=""; el('prop-doc').value=""; el('prop-tel').value=""; el('prop-email').value=""; el('prop-obs').value="";
+  drawItensList();
+  openModal('proposta-modal');
+}
+function addItemLinha(){
+  propostaItens.push({ tipo_item:"servico", item_id:"", nome_item:"", quantidade:1, valor_unitario:0 });
+  drawItensList();
+}
+function removeItemLinha(idx){ propostaItens.splice(idx,1); drawItensList(); }
+function drawItensList(){
+  const wrap = el('itens-list');
+  const opts = (tipo) => (tipo==='exame'?cache.exames:cache.servicos).map(x=>`<option value="${x.id}">${esc(x.nome)} — ${fmtMoney(x.valor_final)}</option>`).join("");
+  wrap.innerHTML = propostaItens.map((it,idx)=>`
+    <div class="itens-line">
+      <select onchange="itemSetTipo(${idx},this.value)">
+        <option value="servico" ${it.tipo_item==='servico'?'selected':''}>Serviço</option>
+        <option value="exame" ${it.tipo_item==='exame'?'selected':''}>Exame</option>
+      </select>
+      <select onchange="itemSetId(${idx},this.value)" style="grid-column:1;display:none"></select>
+      <input placeholder="Qtd" type="number" min="1" value="${it.quantidade}" onchange="itemSetQtd(${idx},this.value)">
+      <input placeholder="Valor unit." type="number" step="0.01" value="${it.valor_unitario}" onchange="itemSetValor(${idx},this.value)">
+      <span class="small">${fmtMoney(it.quantidade*it.valor_unitario)}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeItemLinha(${idx})">×</button>
+    </div>
+    <div class="itens-line" style="margin-top:-6px">
+      <select onchange="itemSetId(${idx},this.value)">
+        <option value="">Selecione ${it.tipo_item==='exame'?'o exame':'o serviço'}...</option>
+        ${opts(it.tipo_item)}
+      </select>
+      <div></div><div></div><div></div><div></div>
+    </div>`).join("") || `<div class="muted small">Nenhum item adicionado.</div>`;
+  recalcTotal();
+}
+function itemSetTipo(idx,v){ propostaItens[idx].tipo_item=v; propostaItens[idx].item_id=""; propostaItens[idx].nome_item=""; propostaItens[idx].valor_unitario=0; drawItensList(); }
+function itemSetId(idx,v){
+  const list = propostaItens[idx].tipo_item==='exame'?cache.exames:cache.servicos;
+  const found = list.find(x=>x.id===v);
+  propostaItens[idx].item_id = v;
+  propostaItens[idx].nome_item = found?found.nome:"";
+  propostaItens[idx].valor_unitario = found?Number(found.valor_final):0;
+  drawItensList();
+}
+function itemSetQtd(idx,v){ propostaItens[idx].quantidade = parseInt(v)||1; recalcTotal(); }
+function itemSetValor(idx,v){ propostaItens[idx].valor_unitario = parseFloat(v)||0; recalcTotal(); }
+function recalcTotal(){
+  const total = propostaItens.reduce((s,it)=>s+(it.quantidade*it.valor_unitario),0);
+  el('prop-total').textContent = fmtMoney(total);
+}
+async function salvarProposta(){
+  const nome = el('prop-nome').value.trim();
+  if(!nome){ toast("Informe o nome do destinatário","err"); return; }
+  if(propostaItens.length===0){ toast("Adicione ao menos um item","err"); return; }
+  const total = propostaItens.reduce((s,it)=>s+(it.quantidade*it.valor_unitario),0);
+  const clienteId = el('prop-cliente-id') ? el('prop-cliente-id').value || null : null;
+  const payload = {
+    cliente_id: el('prop-tipo').value==='empresa' ? clienteId : null,
+    tipo: el('prop-tipo').value,
+    nome_destinatario: nome,
+    documento_destinatario: el('prop-doc').value.trim(),
+    telefone_destinatario: el('prop-tel').value.trim(),
+    email_destinatario: el('prop-email').value.trim(),
+    valor_total: total,
+    status: "rascunho",
+    observacoes: el('prop-obs').value.trim(),
+    criado_por: state.user.id,
+  };
+  const { data: prop, error } = await sb.from('propostas').insert(payload).select().single();
+  if(error){ toast(error.message,"err"); return; }
+  const itensPayload = propostaItens.map(it=>({
+    proposta_id: prop.id, tipo_item: it.tipo_item, item_id: it.item_id || null, nome_item: it.nome_item || "Item avulso",
+    quantidade: it.quantidade, valor_unitario: it.valor_unitario,
+  }));
+  const { error: e2 } = await sb.from('proposta_itens').insert(itensPayload);
+  if(e2){ toast(e2.message,"err"); return; }
+  toast("Proposta criada com sucesso","ok");
+  closeModal('proposta-modal');
+  await renderPropostas();
+}
+async function updatePropostaStatus(id, status){
+  const { error } = await sb.from('propostas').update({status}).eq('id',id);
+  if(error){ toast(error.message,"err"); return; }
+  toast("Status atualizado","ok");
+  const p = cache.propostas.find(x=>x.id===id); if(p) p.status = status;
+}
+async function gerarPdfProposta(id){
+  const { data: prop, error } = await sb.from('propostas').select('*').eq('id',id).single();
+  if(error){ toast(error.message,"err"); return; }
+  const { data: itens } = await sb.from('proposta_itens').select('*').eq('proposta_id',id);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFillColor(15,42,61); doc.rect(0,0,210,28,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(16); doc.text("OPUS Saúde Acessível", 14, 13);
+  doc.setFontSize(9); doc.text("Segurança e Medicina do Trabalho · CNPJ 28.932.073/0001-30", 14, 20);
+  doc.setTextColor(30,30,30);
+  doc.setFontSize(13); doc.text("Proposta Comercial", 14, 38);
+  doc.setFontSize(9); doc.setTextColor(100,100,100);
+  doc.text(`Data: ${new Date(prop.created_at).toLocaleDateString('pt-BR')}`, 14, 44);
+  doc.text(`Nº: ${prop.id.slice(0,8).toUpperCase()}`, 160, 44);
+  doc.setTextColor(30,30,30); doc.setFontSize(10);
+  doc.text(`Destinatário: ${prop.nome_destinatario}`, 14, 54);
+  if(prop.documento_destinatario) doc.text(`Documento: ${prop.documento_destinatario}`, 14, 60);
+  if(prop.telefone_destinatario) doc.text(`Telefone: ${prop.telefone_destinatario}`, 14, 66);
+
+  const rows = (itens||[]).map(it => [it.nome_item, String(it.quantidade), fmtMoney(it.valor_unitario), fmtMoney(it.valor_total)]);
+  doc.autoTable({
+    startY: 74, head: [["Item","Qtd","Valor unitário","Subtotal"]], body: rows,
+    headStyles:{fillColor:[15,42,61]}, styles:{fontSize:9}, theme:'grid',
+  });
+  const finalY = doc.lastAutoTable.finalY + 8;
+  doc.setFontSize(12); doc.setTextColor(15,42,61);
+  doc.text(`Valor total: ${fmtMoney(prop.valor_total)}`, 14, finalY);
+  if(prop.observacoes){
+    doc.setFontSize(9); doc.setTextColor(90,90,90);
+    doc.text(doc.splitTextToSize("Observações: "+prop.observacoes, 180), 14, finalY+10);
+  }
+  doc.setFontSize(8); doc.setTextColor(150,150,150);
+  doc.text("Proposta válida por 15 dias a partir da data de emissão.", 14, 285);
+  doc.save(`Proposta_${prop.nome_destinatario.replace(/\s+/g,'_')}.pdf`);
+}
+
+/* ==================== CONTRATOS ==================== */
+async function renderContratos(){
+  const { data: contratos, error } = await sb.from('contratos').select('*').order('created_at',{ascending:false});
+  if(error) throw error;
+  const { data: aceitas } = await sb.from('propostas').select('*').eq('status','aceita');
+  const jaTemContrato = new Set((contratos||[]).map(c=>c.proposta_id));
+  const disponiveis = (aceitas||[]).filter(p=>!jaTemContrato.has(p.id));
+
+  el('content').innerHTML = `
+    ${disponiveis.length>0 ? `
+    <div class="panel">
+      <div class="panel-head"><h2>Propostas aceitas aguardando contrato (${disponiveis.length})</h2></div>
+      <table><thead><tr><th>Destinatário</th><th>Valor</th><th></th></tr></thead>
+      <tbody>${disponiveis.map(p=>`
+        <tr><td>${esc(p.nome_destinatario)}</td><td>${fmtMoney(p.valor_total)}</td>
+        <td><button class="btn btn-amber btn-sm" onclick='openContratoModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Gerar contrato</button></td></tr>`).join("")}
+      </tbody></table>
+    </div>` : ""}
+    <div class="panel">
+      <div class="panel-head"><h2>Contratos gerados (${(contratos||[]).length})</h2></div>
+      ${(contratos||[]).length===0 ? `<div class="empty-state"><div class="ic">▣</div>Nenhum contrato gerado ainda.</div>` : `
+      <table><thead><tr><th>Contratante</th><th>Valor</th><th>Vigência</th><th>Status</th><th></th></tr></thead>
+      <tbody>${contratos.map(c=>`
+        <tr><td>${esc(c.contratante_nome)}</td><td>${fmtMoney(c.valor_total)}</td>
+        <td class="small">${fmtDate(c.vigencia_inicio)} — ${fmtDate(c.vigencia_fim)}</td>
+        <td><span class="tag tag-info">${c.status}</span></td>
+        <td><button class="btn btn-ghost btn-sm" onclick="gerarPdfContrato('${c.id}')">PDF</button></td></tr>`).join("")}
+      </tbody></table>`}
+    </div>
+    <div class="modal-overlay" id="contrato-modal">
+      <div class="modal wide">
+        <div class="modal-head"><h3>Gerar contrato de prestação de serviço</h3><button class="modal-close" onclick="closeModal('contrato-modal')">&times;</button></div>
+        <div class="modal-body">
+          <input type="hidden" id="ctr-proposta-id">
+          <div class="grid-2">
+            <div class="field"><label>Contratante</label><input id="ctr-nome"></div>
+            <div class="field"><label>CNPJ / CPF</label><input id="ctr-doc"></div>
+          </div>
+          <div class="field"><label>Endereço do contratante</label><input id="ctr-endereco"></div>
+          <div class="field"><label>Objeto do contrato</label><textarea id="ctr-objeto" rows="2" placeholder="Descrição dos serviços prestados"></textarea></div>
+          <div class="grid-3">
+            <div class="field"><label>Valor total (R$)</label><input id="ctr-valor" type="number" step="0.01"></div>
+            <div class="field"><label>Início de vigência</label><input id="ctr-inicio" type="date"></div>
+            <div class="field"><label>Fim de vigência</label><input id="ctr-fim" type="date"></div>
+          </div>
+          <div class="field"><label>Forma de pagamento</label><input id="ctr-pagamento" placeholder="Ex: 50% na assinatura, 50% na entrega"></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal('contrato-modal')">Cancelar</button><button class="btn btn-primary" onclick="salvarContrato()">Salvar contrato</button></div>
+      </div>
+    </div>`;
+}
+function openContratoModal(p){
+  el('ctr-proposta-id').value = p.id;
+  el('ctr-nome').value = p.nome_destinatario;
+  el('ctr-doc').value = p.documento_destinatario || "";
+  el('ctr-endereco').value = "";
+  el('ctr-objeto').value = `Prestação de serviços de Segurança e Medicina do Trabalho conforme proposta comercial nº ${p.id.slice(0,8).toUpperCase()}.`;
+  el('ctr-valor').value = p.valor_total;
+  el('ctr-inicio').value = new Date().toISOString().slice(0,10);
+  const fim = new Date(); fim.setFullYear(fim.getFullYear()+1);
+  el('ctr-fim').value = fim.toISOString().slice(0,10);
+  el('ctr-pagamento').value = "";
+  openModal('contrato-modal');
+}
+async function salvarContrato(){
+  const payload = {
+    proposta_id: el('ctr-proposta-id').value,
+    numero_contrato: "CT-"+Date.now().toString().slice(-8),
+    contratante_nome: el('ctr-nome').value.trim(),
+    contratante_cnpj_cpf: el('ctr-doc').value.trim(),
+    contratante_endereco: el('ctr-endereco').value.trim(),
+    objeto: el('ctr-objeto').value.trim(),
+    valor_total: parseFloat(el('ctr-valor').value)||0,
+    forma_pagamento: el('ctr-pagamento').value.trim(),
+    vigencia_inicio: el('ctr-inicio').value || null,
+    vigencia_fim: el('ctr-fim').value || null,
+    status: "gerado",
+    criado_por: state.user.id,
+  };
+  if(!payload.contratante_nome){ toast("Informe o nome do contratante","err"); return; }
+  const { error } = await sb.from('contratos').insert(payload);
+  if(error){ toast(error.message,"err"); return; }
+  toast("Contrato gerado com sucesso","ok");
+  closeModal('contrato-modal');
+  await renderContratos();
+}
+async function gerarPdfContrato(id){
+  const { data: c, error } = await sb.from('contratos').select('*').eq('id',id).single();
+  if(error){ toast(error.message,"err"); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(13); doc.text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", 105, 20, {align:'center'});
+  doc.setFontSize(9); doc.text(`Nº ${c.numero_contrato}`, 105, 26, {align:'center'});
+  let y = 40;
+  const linha = (txt) => { const lines = doc.splitTextToSize(txt,180); doc.text(lines,14,y); y += lines.length*5+4; };
+  doc.setFontSize(10);
+  linha(`CONTRATADA: OPUS Saúde Acessível, inscrita no CNPJ 28.932.073/0001-30, com sede em Parauapebas/PA, doravante denominada CONTRATADA.`);
+  linha(`CONTRATANTE: ${c.contratante_nome}, ${c.contratante_cnpj_cpf?('inscrito(a) no CNPJ/CPF '+c.contratante_cnpj_cpf+', '):''}${c.contratante_endereco?('com endereço em '+c.contratante_endereco+', '):''}doravante denominado(a) CONTRATANTE.`);
+  linha(`CLÁUSULA 1ª — DO OBJETO`);
+  linha(c.objeto || "Prestação de serviços de Segurança e Medicina do Trabalho.");
+  linha(`CLÁUSULA 2ª — DO VALOR E FORMA DE PAGAMENTO`);
+  linha(`O valor total dos serviços é de ${fmtMoney(c.valor_total)}. Forma de pagamento: ${c.forma_pagamento || 'a combinar entre as partes'}.`);
+  linha(`CLÁUSULA 3ª — DA VIGÊNCIA`);
+  linha(`O presente contrato vigora de ${fmtDate(c.vigencia_inicio)} até ${fmtDate(c.vigencia_fim)}, podendo ser renovado mediante acordo entre as partes.`);
+  linha(`CLÁUSULA 4ª — DAS OBRIGAÇÕES`);
+  linha(`A CONTRATADA compromete-se a executar os serviços com observância das Normas Regulamentadoras aplicáveis. O CONTRATANTE compromete-se a fornecer as informações e o acesso necessários à execução dos serviços.`);
+  linha(`CLÁUSULA 5ª — DO FORO`);
+  linha(`Fica eleito o foro da comarca de Parauapebas/PA para dirimir quaisquer dúvidas oriundas deste contrato.`);
+  y += 15;
+  doc.text("_________________________________", 14, y);
+  doc.text("_________________________________", 110, y);
+  y += 6;
+  doc.text("OPUS Saúde Acessível", 14, y);
+  doc.text(c.contratante_nome.slice(0,35), 110, y);
+  doc.save(`Contrato_${c.contratante_nome.replace(/\s+/g,'_')}.pdf`);
+}
+
+/* ==================== USUÁRIOS (admin) ==================== */
+async function renderUsuarios(){
+  const { data, error } = await sb.from('profiles').select('*').order('created_at');
+  if(error) throw error;
+  el('content').innerHTML = `
+    <div class="panel">
+      <div class="panel-head"><h2>Usuários do sistema (${data.length})</h2></div>
+      <table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th></tr></thead>
+      <tbody>${data.map(u=>`
+        <tr><td>${esc(u.nome)}</td><td class="small">${esc(u.email)}</td>
+        <td><select onchange="updateUserRole('${u.id}',this.value)" ${u.id===state.user.id?'disabled':''}>
+          <option value="comercial" ${u.role==='comercial'?'selected':''}>Comercial</option>
+          <option value="financeiro" ${u.role==='financeiro'?'selected':''}>Financeiro</option>
+          <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+        </select></td>
+        <td><span class="tag ${u.ativo?'tag-success':'tag-danger'}">${u.ativo?'Ativo':'Inativo'}</span></td></tr>`).join("")}
+      </tbody></table>
+    </div>`;
+}
+async function updateUserRole(id, role){
+  const { error } = await sb.from('profiles').update({role}).eq('id',id);
+  if(error){ toast(error.message,"err"); return; }
+  toast("Papel atualizado","ok");
+}
+
+/* ==================== MODAL HELPERS ==================== */
+function openModal(id){ el(id).classList.add('open'); }
+function closeModal(id){ el(id).classList.remove('open'); }
+
+/* ==================== BOOT ==================== */
+(async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session && session.user){
+    const ok = await loadProfile();
+    if(ok) await showApp(); else showLogin();
+  } else {
+    showLogin();
+  }
+})();
+</script>
+</body>
+</html>
