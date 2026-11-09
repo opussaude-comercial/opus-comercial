@@ -322,10 +322,16 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
   .acesso-card { padding: 22px 18px 18px; }
 }
 
+/* botão Word */
+#bt-word.carregando .ico { animation: pulso 1s ease-in-out infinite; }
+@keyframes pulso { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { #bt-word.carregando .ico { animation: none; } }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-word" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 11l1.3 5.5 2.2-4.2 2.2 4.2 1.3-5.5"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
@@ -417,6 +423,7 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
       <button type="button" class="btn ghost" id="bt-precos" title="Tabela de preços"><svg class="ico"><use href="#i-tag"/></svg><span class="tx">Preços</span></button>
       <button type="button" class="btn" id="bt-salvar" title="Salvar proposta"><svg class="ico"><use href="#i-save"/></svg><span class="tx">Salvar</span></button>
       <button type="button" class="btn" id="bt-copiar" title="Copiar texto para WhatsApp ou e-mail"><svg class="ico"><use href="#i-copy"/></svg><span class="tx">Copiar texto</span></button>
+      <button type="button" class="btn" id="bt-word" title="Baixar em Word (.docx) para editar"><svg class="ico"><use href="#i-word"/></svg><span class="tx">Baixar Word</span></button>
       <button type="button" class="btn pri" id="bt-pdf"><svg class="ico"><use href="#i-down"/></svg><span class="tx">Baixar PDF</span></button>
       <div class="usr">
         <button type="button" class="btn ghost usr-bt" id="bt-usuario" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-usuario"><span class="av" id="usr-av"></span><span class="tx" id="usr-nome"></span></button>
@@ -1854,6 +1861,560 @@ if (typeof module !== 'undefined') module.exports = PDFDoc;
 
 </script>
 <script>
+/* ===== Proposta em Word (.docx) =====
+   Converte a mesma definição usada no PDF (pdfmake) para um documento Word editável,
+   com o timbrado/capa ao fundo, tabelas, cartões e rodapé com número de página.
+   Usa a biblioteca docx (global window.docx), carregada sob demanda. */
+const WordDoc = (() => {
+  'use strict';
+  const LIB = 'https://cdn.jsdelivr.net/npm/docx@9.13.0/dist/index.iife.js';
+  const FONTE = 'Arial';
+  const PAG = { w: 595.28, h: 841.89 };
+  const PG = '§PG§';                 // marca do número da página no rodapé
+  const TW = pt => Math.round(pt * 20);        // pontos -> twips
+  const HP = pt => Math.max(2, Math.round(pt * 2)); // pontos -> meios-pontos
+  const COR = c => (c && c !== 'black') ? String(c).replace('#', '').toUpperCase() : (c === 'black' ? '000000' : undefined);
+  const HERDA = ['fontSize', 'bold', 'italics', 'color', 'characterSpacing', 'alignment', 'lineHeight'];
+
+  /* ---------- carregamento da biblioteca ---------- */
+  let carregando = null;
+  function carregar() {
+    if (window.docx && window.docx.Document) return Promise.resolve(window.docx);
+    if (carregando) return carregando;
+    carregando = new Promise((ok, falha) => {
+      const s = document.createElement('script');
+      s.src = LIB; s.async = true;
+      s.onload = () => window.docx && window.docx.Document ? ok(window.docx) : falha(new Error('docx indisponível'));
+      s.onerror = () => { carregando = null; s.remove(); falha(new Error('Não foi possível carregar o gerador de Word.')); };
+      document.head.appendChild(s);
+    });
+    return carregando;
+  }
+
+  /* ---------- utilidades ---------- */
+  const herda = (st, n) => { const o = { ...st }; if (n && typeof n === 'object') for (const k of HERDA) if (n[k] !== undefined) o[k] = n[k]; return o; };
+  const margem = m => Array.isArray(m) ? (m.length === 2 ? [m[0], m[1], m[0], m[1]] : m) : (typeof m === 'number' ? [m, m, m, m] : [0, 0, 0, 0]);
+  const soma = a => a.reduce((x, y) => x + y, 0);
+  const vazio = it => it == null || it === '' || (typeof it === 'object' && !it.stack && !it.table && !it.image && !it.columns && !it.canvas && !it.ul && (it.text === undefined || it.text === '' || it.text === ' '));
+  const ehP = b => b && b.k === 'p';
+
+  function textoPlano(t) {
+    if (t == null) return '';
+    if (typeof t === 'string' || typeof t === 'number') return String(t);
+    if (Array.isArray(t)) return t.map(textoPlano).join('');
+    return textoPlano(t.text);
+  }
+
+  /* trechos de texto com estilo (corridas) */
+  function corridas(t, st, out = []) {
+    if (t == null) return out;
+    if (Array.isArray(t)) { for (const x of t) corridas(x, st, out); return out; }
+    if (typeof t === 'object') return corridas(t.text, herda(st, t), out);
+    const partes = String(t).split('\n');
+    partes.forEach((p, i) => {
+      const base = { b: !!st.bold, i: !!st.italics, c: st.color, sz: st.fontSize, cs: st.characterSpacing, br: i > 0 };
+      if (p.includes(PG)) {
+        const [a, d] = p.split(PG);
+        if (a) out.push({ ...base, t: a });
+        out.push({ ...base, br: false, pg: true });
+        if (d) out.push({ ...base, br: false, t: d });
+      } else out.push({ ...base, t: p });
+    });
+    return out;
+  }
+
+  const P = (st, extra = {}) => ({ k: 'p', runs: [], align: st.alignment, line: st.lineHeight, before: 0, after: 0, indL: 0, indR: 0, ...extra });
+  const espaco = h => ({ k: 'p', runs: [], spacer: h, before: 0, after: 0, indL: 0, indR: 0 });
+
+  function recuar(blocos, esq, dir) {
+    if (!esq && !dir) return;
+    for (const b of blocos) {
+      if (b.k === 'p') { b.indL += esq; b.indR += dir; }
+      else if (b.k === 't') { b.indent = (b.indent || 0) + esq; }
+    }
+  }
+  function aplicarMargem(out, m) {
+    const [ml, mt, mr, mb] = m;
+    recuar(out, ml, mr);
+    const reais = out.filter(b => b.k !== 'pb');
+    if (mt > 0) { const f = reais[0]; if (ehP(f) && !f.spacer) f.before += mt; else out.unshift(espaco(mt)); }
+    if (mb > 0) { const l = reais[reais.length - 1]; if (ehP(l) && !l.spacer) l.after += mb; else out.push(espaco(mb)); }
+    return out;
+  }
+  /* mantém o grupo na mesma página: tudo segura o próximo, menos o último bloco de conteúdo
+     (espaçadores depois dele não seguram nada) */
+  function manterJuntos(out) {
+    const reais = out.filter(b => b.k !== 'pb');
+    let ult = -1;
+    reais.forEach((b, i) => { if (!b.spacer) ult = i; });
+    reais.forEach((b, i) => {
+      if (i > ult) return;
+      const ultimo = i === ult;
+      if (b.k === 'p') { if (!ultimo) b.keepNext = true; b.keepLines = true; }
+      else if (b.k === 't') { b.keep = ultimo ? (b.keep === 'all' ? 'all' : 'inner') : 'all'; for (const r of b.rows) r.cantSplit = true; }
+    });
+  }
+
+  /* ---------- conversão dos nós do pdfmake ---------- */
+  function blocos(n, st, W, cx) {
+    if (n == null) return [];
+    if (typeof n === 'string' || typeof n === 'number') n = { text: String(n) };
+    if (Array.isArray(n)) return n.flatMap(x => blocos(x, st, W, cx));
+    const s = herda(st, n);
+    const m = margem(n.margin);
+    const Wi = Math.max(20, W - m[0] - m[2]);
+    let out;
+
+    if (n.stack) out = n.stack.flatMap(x => blocos(x, s, Wi, cx));
+    else if (n.columns) out = colunas(n, s, Wi, cx);
+    else if (n.table) { const t = tabela(n, s, Wi, cx); out = [faixa(t) || t]; }
+    else if (n.ul) out = n.ul.flatMap(it => { const b = blocos(it, s, Wi - 18, cx); const p = b.find(ehP); if (p) p.bullet = true; return b; });
+    else if (n.image) out = [imagem(n, s, Wi, cx)];
+    else if (n.canvas) out = linha(n, s, Wi);
+    else if (n.text !== undefined) {
+      const txt = textoPlano(n.text);
+      if ((txt === '' || txt === ' ') && n.pageBreak) out = [];
+      else out = [{ ...P(s), runs: corridas(n.text, s) }];
+    } else out = [];
+
+    aplicarMargem(out, m);
+    if (n.unbreakable) manterJuntos(out);
+    if (n.pageBreak === 'before') out.unshift({ k: 'pb' });
+    if (n.pageBreak === 'after') out.push({ k: 'pb' });
+    return out;
+  }
+
+  function linha(n, s, W) {
+    const ln = (n.canvas || []).find(c => c.type === 'line');
+    if (!ln) return [];
+    const len = Math.min(W, Math.abs((ln.x2 || 0) - (ln.x1 || 0)));
+    return [{ ...P(s), rule: { w: ln.lineWidth || 1, c: ln.lineColor || '#000000' }, exact: 1, indR: Math.max(0, W - len) }];
+  }
+
+  function imagem(n, s, W, cx) {
+    const d = cx.dims[n.image] || { w: 400, h: 300 };
+    let w, h;
+    if (n.fit) { const k = Math.min(n.fit[0] / d.w, n.fit[1] / d.h); w = d.w * k; h = d.h * k; }
+    else if (n.width) { w = n.width; h = n.height || d.h * n.width / d.w; }
+    else { w = d.w * 0.75; h = d.h * 0.75; }
+    if (w > W) { h = h * W / w; w = W; }
+    return { ...P(s), align: n.alignment || s.alignment, runs: [{ img: n.image, w, h }], line: 1 };
+  }
+
+  function larguraAuto(body, j) {
+    let max = 20;
+    for (const row of body) { const c = row[j]; if (c && !c.colSpan) max = Math.max(max, textoPlano(c.text !== undefined ? c.text : c).length * ((c.fontSize || 9) * 0.55)); }
+    return max;
+  }
+
+  function tabela(n, s, W, cx) {
+    const def = n.table, L = n.layout || {}, body = def.body || [];
+    const nc = def.widths ? def.widths.length : Math.max(...body.map(r => r.length));
+    const node = { table: def };
+    const fn = (nome, padrao) => typeof L[nome] === 'function' ? L[nome] : (L[nome] !== undefined ? () => L[nome] : () => padrao);
+    const pl = fn('paddingLeft', 4), pr = fn('paddingRight', 4), pt = fn('paddingTop', 2), pb = fn('paddingBottom', 2);
+    const hw = fn('hLineWidth', 1), vw = fn('vLineWidth', 1), hc = fn('hLineColor', 'black'), vc = fn('vLineColor', 'black'), fill = fn('fillColor', null);
+    const ws = def.widths || Array(nc).fill('*');
+    let fixo = 0, estrelas = 0;
+    const base = ws.map((w, j) => {
+      const pad = pl(j, node) + pr(j, node);
+      if (typeof w === 'number') { fixo += w + pad; return w + pad; }
+      if (w === 'auto') { const a = larguraAuto(body, j) + pad; fixo += a; return a; }
+      estrelas++; return null;
+    });
+    const resto = estrelas ? Math.max(24 * estrelas, W - fixo) / estrelas : 0;
+    const cols = base.map(w => w == null ? resto : w);
+    const borda = (w, c) => w > 0 ? { w, c: c || '#000000' } : null;
+    const rows = body.map((row, r) => {
+      const cells = [];
+      for (let c = 0; c < nc;) {
+        let cel = row[c];
+        if (cel == null) cel = { text: '' };
+        if (typeof cel === 'string' || typeof cel === 'number') cel = { text: String(cel) };
+        const span = Math.max(1, Math.min(cel.colSpan || 1, nc - c));
+        const m = margem(cel.margin);
+        const w = soma(cols.slice(c, c + span));
+        const mar = { l: pl(c, node) + m[0], r: pr(c + span - 1, node) + m[2], t: pt(r, node) + m[1], b: pb(r, node) + m[3] };
+        const interno = { ...cel, margin: undefined, colSpan: undefined };
+        const bl = blocos(interno, s, Math.max(20, w - mar.l - mar.r), cx);
+        cells.push({
+          span, w, fill: fill(r, node, c), mar, blocks: bl,
+          bordas: {
+            top: borda(hw(r, node), hc(r, node, c)), bottom: borda(hw(r + 1, node), hc(r + 1, node, c)),
+            left: borda(vw(c, node), vc(c, node, r)), right: borda(vw(c + span, node), vc(c + span, node, r))
+          }
+        });
+        c += span;
+      }
+      return { cells, header: r < (def.headerRows || 0), cantSplit: !!def.dontBreakRows };
+    });
+    return { k: 't', cols, rows, indent: 0 };
+  }
+
+  /* tabela de uma célula, sem bordas e com fundo (barra de título): vira parágrafo sombreado,
+     que o Word e o LibreOffice mantêm junto do texto seguinte */
+  function faixa(t) {
+    if (t.rows.length !== 1 || t.rows[0].cells.length !== 1) return null;
+    const c = t.rows[0].cells[0];
+    if (!c.fill || Object.values(c.bordas).some(Boolean)) return null;
+    const ps = c.blocks.filter(b => b.k !== 'pb');
+    if (ps.length !== 1 || !ehP(ps[0]) || ps[0].rule || ps[0].spacer || ps[0].runs.some(r => r.img)) return null;
+    const p = ps[0];
+    return { ...p, before: 0, after: 0, indL: (t.indent || 0) + c.mar.l + p.indL, indR: c.mar.r + p.indR,
+      shade: { fill: c.fill, t: c.mar.t + p.before, b: c.mar.b + p.after, l: c.mar.l, r: c.mar.r } };
+  }
+
+  function colunas(n, s, W, cx) {
+    const itens = n.columns.map(x => typeof x === 'string' ? { text: x } : x);
+    const gap = n.columnGap || 0;
+    let fixo = gap * (itens.length - 1), estrelas = 0;
+    const base = itens.map(it => {
+      if (typeof it.width === 'number') { fixo += it.width; return it.width; }
+      if (it.width === 'auto') { const a = Math.min(W, textoPlano(it.text).length * 5 + 10); fixo += a; return a; }
+      estrelas++; return null;
+    });
+    const resto = estrelas ? Math.max(20, W - fixo) / estrelas : 0;
+    const cw = base.map(w => w == null ? resto : w);
+    const cheios = itens.map((it, i) => [it, i]).filter(([it]) => !vazio(it));
+    if (!cheios.length) return [];
+    if (cheios.length === 1) {
+      const [it, i] = cheios[0];
+      const esq = soma(cw.slice(0, i)) + gap * i;
+      const dir = Math.max(0, W - esq - cw[i]);
+      const bl = blocos({ ...it, width: undefined }, s, cw[i], cx);
+      recuar(bl, esq, dir);
+      return bl;
+    }
+    const cells = [], cols = [];
+    itens.forEach((it, i) => {
+      if (i > 0 && gap > 0) { cols.push(gap); cells.push({ span: 1, w: gap, fill: null, mar: { l: 0, r: 0, t: 0, b: 0 }, blocks: [], bordas: {}, gap: true }); }
+      cols.push(cw[i]);
+      const unico = it.table && it.table.body && it.table.body.length === 1 && it.table.body[0].length === 1 && !it.margin;
+      if (unico) {
+        const t = tabela(it, herda(s, it), cw[i], cx);
+        const c0 = t.rows[0].cells[0];
+        cells.push({ ...c0, span: 1, w: cw[i] });
+      } else {
+        cells.push({ span: 1, w: cw[i], fill: null, mar: { l: 0, r: 0, t: 0, b: 0 }, blocks: vazio(it) ? [] : blocos({ ...it, width: undefined }, s, cw[i], cx), bordas: {} });
+      }
+    });
+    return [{ k: 't', cols, rows: [{ cells, cantSplit: true }], indent: 0, layout: true }];
+  }
+
+  /* ---------- limpeza: espaçadores e quebras de página ---------- */
+  function arrumar(lista) {
+    const out = [];
+    for (const b of lista) {
+      const ant = out[out.length - 1];
+      if (b.spacer && ant && ant.spacer) { ant.spacer += b.spacer; ant.keepNext = ant.keepNext || b.keepNext; continue; }
+      out.push(b);
+    }
+    const fim = [];
+    for (let i = 0; i < out.length; i++) {
+      const b = out[i];
+      if (b.spacer) {
+        const ant = fim[fim.length - 1], prox = out[i + 1];
+        if (ehP(ant) && !ant.spacer && !ant.rule) { ant.after += b.spacer; continue; }
+        if (ehP(prox) && !prox.spacer && !prox.rule) { prox.before += b.spacer; continue; }
+      }
+      fim.push(b);
+    }
+    // quebra de página pendente e tabelas coladas
+    const res = [];
+    let quebra = false;
+    for (const b of fim) {
+      if (b.k === 'pb') { quebra = res.length > 0 || quebra; continue; }
+      const ant = res[res.length - 1];
+      if (ant && ant.k === 't' && (b.k === 't' || (ant.float && (!ehP(b) || quebra)))) res.push(espaco(1));
+      if (quebra) {
+        if (ehP(b)) b.pageBreakBefore = true;
+        else res.push({ ...espaco(1), pageBreakBefore: true });
+        quebra = false;
+      }
+      res.push(b);
+    }
+    return res;
+  }
+
+  /* ---------- montagem no docx ---------- */
+  function construir(D, lista, cx, forcarJuntos = false) {
+    const out = [];
+    for (const b of arrumar(lista)) {
+      if (b.k === 'p') out.push(paragrafo(D, b, cx, forcarJuntos));
+      else if (b.k === 't') out.push(tabelaDocx(D, b, cx, forcarJuntos));
+    }
+    return out;
+  }
+
+  function corridaDocx(D, r, cx) {
+    if (r.img) {
+      const im = cx.imgs[r.img];
+      return new D.ImageRun({ type: im.tipo, data: im.bytes, transformation: { width: Math.round(r.w * 96 / 72), height: Math.round(r.h * 96 / 72) } });
+    }
+    const o = { font: FONTE, bold: r.b || undefined, italics: r.i || undefined, color: COR(r.c), size: r.sz ? HP(r.sz) : undefined, characterSpacing: r.cs ? Math.round(r.cs * 20) : undefined, break: r.br ? 1 : undefined };
+    if (r.pg) return new D.TextRun({ ...o, children: [D.PageNumber.CURRENT] });
+    return new D.TextRun({ ...o, text: r.t });
+  }
+
+  function alinhamento(D, a) {
+    if (a === 'center') return D.AlignmentType.CENTER;
+    if (a === 'right') return D.AlignmentType.RIGHT;
+    if (a === 'justify') return D.AlignmentType.JUSTIFIED;
+    return D.AlignmentType.LEFT;
+  }
+
+  function paragrafo(D, b, cx, forcarJuntos) {
+    const o = {
+      alignment: alinhamento(D, b.align),
+      spacing: { before: TW(b.before || 0), after: TW(b.after || 0) },
+      indent: (b.indL || b.indR) ? { left: TW(b.indL || 0), right: TW(b.indR || 0) } : undefined,
+      keepNext: (b.keepNext || forcarJuntos) || undefined,
+      keepLines: b.keepLines || undefined,
+      pageBreakBefore: b.pageBreakBefore || undefined,
+      children: (b.runs || []).map(r => corridaDocx(D, r, cx))
+    };
+    if (b.spacer) {
+      o.spacing.line = TW(Math.max(1, b.spacer)); o.spacing.lineRule = D.LineRuleType.EXACT;
+      o.run = { size: 2 }; o.children = [];
+    } else if (b.exact) {
+      o.spacing.line = TW(b.exact); o.spacing.lineRule = D.LineRuleType.EXACT;
+    } else {
+      o.spacing.line = Math.round(240 * (b.line || cx.linha)); o.spacing.lineRule = D.LineRuleType.AUTO;
+    }
+    if (b.rule) { o.border = { bottom: { style: D.BorderStyle.SINGLE, size: Math.max(2, Math.round(b.rule.w * 8)), color: COR(b.rule.c), space: 0 } }; o.run = { size: 2 }; }
+    if (b.bullet) o.numbering = { reference: 'marcador', level: 0 };
+    if (b.shade) {
+      const cor = COR(b.shade.fill);
+      const lado = esp => ({ style: D.BorderStyle.SINGLE, size: 4, color: cor, space: Math.max(0, Math.min(31, Math.round(esp))) });
+      o.shading = { type: D.ShadingType.CLEAR, color: 'auto', fill: cor };
+      o.border = { top: lado(b.shade.t), bottom: lado(b.shade.b), left: lado(b.shade.l), right: lado(b.shade.r) };
+    }
+    if (!o.children.length && !o.run) o.run = { size: 2 };
+    return new D.Paragraph(o);
+  }
+
+  function bordaDocx(D, bd) {
+    return bd ? { style: D.BorderStyle.SINGLE, size: Math.max(2, Math.round(bd.w * 8)), color: COR(bd.c) || '000000' }
+      : { style: D.BorderStyle.NONE, size: 0, color: 'auto' };
+  }
+
+  function tabelaDocx(D, t, cx, forcarJuntos) {
+    const twCols = []; let acc = 0, accTw = 0;
+    for (const c of t.cols) { acc += c; const alvo = TW(acc); twCols.push(Math.max(20, alvo - accTw)); accTw = alvo; }
+    const total = soma(twCols);
+    const nr = t.rows.length;
+    const rows = t.rows.map((row, r) => {
+      const juntos = forcarJuntos || t.keep === 'all' || (t.keep === 'inner' && r < nr - 1);
+      let ci = 0;
+      const cells = row.cells.map(cel => {
+        const w = soma(twCols.slice(ci, ci + cel.span)); ci += cel.span;
+        let filhos = construir(D, cel.blocks, cx, juntos);
+        if (!filhos.length || !(filhos[filhos.length - 1] instanceof D.Paragraph)) {
+          filhos.push(new D.Paragraph({ spacing: { before: 0, after: 0, line: 20, lineRule: D.LineRuleType.EXACT }, run: { size: 2 }, keepNext: juntos || undefined }));
+        }
+        return new D.TableCell({
+          width: { size: w, type: D.WidthType.DXA },
+          columnSpan: cel.span > 1 ? cel.span : undefined,
+          shading: cel.fill ? { type: D.ShadingType.CLEAR, color: 'auto', fill: COR(cel.fill) } : undefined,
+          borders: { top: bordaDocx(D, cel.bordas.top), bottom: bordaDocx(D, cel.bordas.bottom), left: bordaDocx(D, cel.bordas.left), right: bordaDocx(D, cel.bordas.right) },
+          margins: { top: TW(cel.mar.t), bottom: TW(cel.mar.b), left: TW(cel.mar.l), right: TW(cel.mar.r), marginUnitType: D.WidthType.DXA },
+          verticalAlign: cel.vAlign === 'center' ? D.VerticalAlign.CENTER : D.VerticalAlign.TOP,
+          children: filhos
+        });
+      });
+      return new D.TableRow({ children: cells, cantSplit: row.cantSplit || undefined, tableHeader: row.header || undefined });
+    });
+    const o = {
+      rows, columnWidths: twCols, width: { size: total, type: D.WidthType.DXA }, layout: D.TableLayoutType.FIXED,
+      borders: D.TableBorders.NONE,
+      margins: { top: 0, bottom: 0, left: 0, right: 0, marginUnitType: D.WidthType.DXA }
+    };
+    if (t.indent) o.indent = { size: TW(t.indent), type: D.WidthType.DXA };
+    if (t.float) o.float = {
+      horizontalAnchor: D.TableAnchorType.PAGE, verticalAnchor: D.TableAnchorType.PAGE,
+      absoluteHorizontalPosition: TW(t.float.x), absoluteVerticalPosition: TW(t.float.y),
+      overlap: D.OverlapType.OVERLAP
+    };
+    return new D.Table(o);
+  }
+
+  /* ---------- imagens ---------- */
+  function bytesDe(dataUrl) {
+    const [cab, b64] = String(dataUrl).split(',');
+    const bin = atob(b64 || '');
+    const u = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return { bytes: u, tipo: /png/i.test(cab) ? 'png' : 'jpg' };
+  }
+  function medir(src) {
+    return new Promise(ok => { const im = new Image(); im.onload = () => ok({ w: im.naturalWidth || 1, h: im.naturalHeight || 1 }); im.onerror = () => ok({ w: 1240, h: 1754 }); im.src = src; });
+  }
+
+  function fundoDocx(D, img, cx) {
+    if (!img || !cx.imgs[img.image]) return [new D.Paragraph({ children: [], run: { size: 2 } })];
+    const im = cx.imgs[img.image];
+    return [new D.Paragraph({
+      spacing: { before: 0, after: 0, line: 20, lineRule: D.LineRuleType.EXACT }, run: { size: 2 },
+      children: [new D.ImageRun({
+        type: im.tipo, data: im.bytes,
+        transformation: { width: Math.round((img.width || PAG.w) * 96 / 72), height: Math.round((img.height || PAG.h) * 96 / 72) },
+        floating: {
+          horizontalPosition: { relative: D.HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+          verticalPosition: { relative: D.VerticalPositionRelativeFrom.PAGE, offset: 0 },
+          behindDocument: true, allowOverlap: true, lockAnchor: true,
+          wrap: { type: D.TextWrappingType.NONE }
+        }
+      })]
+    })];
+  }
+
+  function alturaEstimada(t) {
+    return soma(t.rows.map(r => Math.max(...r.cells.map(c => {
+      const ps = c.blocks.filter(ehP);
+      const linhas = Math.max(1, ps.length);
+      const fs = Math.max(8, ...ps.flatMap(p => p.runs.map(x => x.sz || 9)));
+      return c.mar.t + c.mar.b + linhas * fs * 1.25;
+    }))));
+  }
+
+  /* ---------- ZIP sem entradas de pasta ----------
+     O gerador grava entradas de pasta no .docx; o Word pelo OneDrive/SharePoint às vezes recusa
+     arquivos assim. Aqui o ZIP é reescrito só com os arquivos, sem recomprimir nada. */
+  async function semPastas(blob) {
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    const dv = new DataView(buf.buffer);
+    let fim = -1;
+    for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { fim = i; break; }
+    if (fim < 0) return blob;
+    const total = dv.getUint16(fim + 10, true), cdTam = dv.getUint32(fim + 12, true), cdIni = dv.getUint32(fim + 16, true);
+    const ents = [];
+    let p = cdIni;
+    for (let k = 0; k < total; k++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) return blob;
+      const n = dv.getUint16(p + 28, true), e = dv.getUint16(p + 30, true), c = dv.getUint16(p + 32, true);
+      const nome = new TextDecoder().decode(buf.subarray(p + 46, p + 46 + n));
+      ents.push({ ini: p, tam: 46 + n + e + c, nome, local: dv.getUint32(p + 42, true) });
+      p += 46 + n + e + c;
+    }
+    if (!ents.some(x => x.nome.endsWith('/'))) return blob;
+    const porLocal = [...ents].sort((a, b) => a.local - b.local);
+    porLocal.forEach((x, i) => { x.localFim = i + 1 < porLocal.length ? porLocal[i + 1].local : cdIni; });
+    const partes = [], cd = [];
+    let pos = 0;
+    for (const x of porLocal) {
+      if (x.nome.endsWith('/')) continue;
+      partes.push(buf.subarray(x.local, x.localFim));
+      x.novo = pos; pos += x.localFim - x.local;
+    }
+    const cdNovoIni = pos;
+    let n = 0;
+    for (const x of ents) {
+      if (x.nome.endsWith('/')) continue;
+      const r = buf.slice(x.ini, x.ini + x.tam);
+      new DataView(r.buffer).setUint32(42, x.novo, true);
+      cd.push(r); pos += r.length; n++;
+    }
+    const eocd = buf.slice(fim, buf.length);
+    const ed = new DataView(eocd.buffer);
+    ed.setUint16(8, n, true); ed.setUint16(10, n, true);
+    ed.setUint32(12, pos - cdNovoIni, true); ed.setUint32(16, cdNovoIni, true);
+    return new Blob([...partes, ...cd, eocd], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  }
+
+  /* ---------- documento ---------- */
+  async function gerar(dd) {
+    const D = await carregar();
+    const imgs = {}, dims = {};
+    for (const [nome, src] of Object.entries(dd.images || {})) { imgs[nome] = bytesDe(src); dims[nome] = await medir(src); }
+    const ds = dd.defaultStyle || {};
+    const raiz = { fontSize: ds.fontSize || 9.3, color: ds.color, lineHeight: ds.lineHeight || 1.15 };
+    const cx = { imgs, dims, linha: raiz.lineHeight };
+    const [ml, mt, mr, mb] = margem(dd.pageMargins || 40);
+    const W = PAG.w - ml - mr;
+
+    // corpo: elementos com posição absoluta (capa) entram em sequência com espaçamento calculado
+    const corpo = [];
+    let y = mt;
+    for (const n of dd.content || []) {
+      if (n && n.absolutePosition) {
+        const ap = n.absolutePosition;
+        if (n.table) {
+          const t = tabela(n, herda(raiz, n), W, cx);
+          t.float = { x: ap.x, y: ap.y };
+          corpo.push(t);
+        } else {
+          const bl = blocos({ ...n, absolutePosition: undefined }, raiz, W - (ap.x - ml), cx);
+          const p = bl.find(ehP);
+          if (!p) continue;
+          const h = p.rule ? 1 + p.rule.w : Math.max(...p.runs.map(r => r.sz || raiz.fontSize)) * 1.22;
+          p.before = Math.max(0, ap.y - y);
+          if (!p.rule) p.exact = h;
+          p.indL += Math.max(0, ap.x - ml);
+          y = ap.y + h;
+          corpo.push(...bl);
+        }
+        continue;
+      }
+      corpo.push(...blocos(n, raiz, W, cx));
+    }
+
+    // fundo (timbrado/capa) e rodapé
+    const bg = p => (typeof dd.background === 'function' ? dd.background(p, { width: PAG.w, height: PAG.h }) : dd.background) || null;
+    const bg1 = bg(1), bg2 = bg(2);
+    const rod = p => typeof dd.footer === 'function' ? dd.footer(p, 9) : (dd.footer || null);
+    const f1 = rod(1), f2 = rod(PG);
+    const primeiraDiferente = (bg1 && bg1.image) !== (bg2 && bg2.image) || (!f1) !== (!f2);
+    const rodapeDocx = f => {
+      if (!f) return [new D.Paragraph({ children: [], run: { size: 2 } })];
+      const fm = margem(f.margin);
+      const bl = blocos({ ...f, margin: undefined }, raiz, PAG.w - fm[0] - fm[2], cx);
+      recuar(bl, fm[0] - ml, 0);
+      const filhos = construir(D, bl, cx);
+      filhos.push(new D.Paragraph({ spacing: { before: 0, after: 0, line: 20, lineRule: D.LineRuleType.EXACT }, run: { size: 2 }, children: [] }));
+      return filhos;
+    };
+    let rodapeAltura = 18, rodapeTopo = 10;
+    if (f2) {
+      const fm = margem(f2.margin); rodapeTopo = fm[1];
+      const t = blocos({ ...f2, margin: undefined }, raiz, PAG.w - fm[0] - fm[2], cx).find(b => b.k === 't');
+      if (t) rodapeAltura = alturaEstimada(t) + 1;
+    }
+    const distRodape = Math.max(18, mb - rodapeTopo - rodapeAltura);
+
+    const info = dd.info || {};
+    const doc = new D.Document({
+      title: info.title, creator: info.author || 'OPUS Saúde Acessível', subject: info.subject, description: info.subject,
+      styles: { default: { document: {
+        run: { font: FONTE, size: HP(raiz.fontSize), color: COR(raiz.color) },
+        paragraph: { spacing: { line: Math.round(240 * raiz.lineHeight), before: 0, after: 0 } }
+      } } },
+      numbering: { config: [{ reference: 'marcador', levels: [{
+        level: 0, format: D.LevelFormat.BULLET, text: '•', alignment: D.AlignmentType.LEFT,
+        style: { paragraph: { indent: { left: 340, hanging: 220 } }, run: { color: '569C73' } }
+      }] }] },
+      sections: [{
+        properties: {
+          titlePage: primeiraDiferente || undefined,
+          page: { size: { width: TW(PAG.w), height: TW(PAG.h), orientation: D.PageOrientation.PORTRAIT },
+            margin: { top: TW(mt), right: TW(mr), bottom: TW(mb), left: TW(ml), header: 0, footer: TW(distRodape) } }
+        },
+        headers: primeiraDiferente ? { default: new D.Header({ children: fundoDocx(D, bg2, cx) }), first: new D.Header({ children: fundoDocx(D, bg1, cx) }) }
+          : { default: new D.Header({ children: fundoDocx(D, bg2, cx) }) },
+        footers: primeiraDiferente ? { default: new D.Footer({ children: rodapeDocx(f2) }), first: new D.Footer({ children: rodapeDocx(f1) }) }
+          : { default: new D.Footer({ children: rodapeDocx(f2) }) },
+        children: construir(D, corpo, cx)
+      }]
+    });
+    const bruto = await D.Packer.toBlob(doc);
+    try { return await semPastas(bruto); } catch (e) { console.error(e); return bruto; }
+  }
+
+  return { carregar, gerar, PG };
+})();
+if (typeof module !== 'undefined') module.exports = WordDoc;
+
+</script>
+<script>
 /* ===== Acesso: login, troca de senha a cada 90 dias e gestão de usuários ===== */
 const Sessao = (() => {
   'use strict';
@@ -2383,7 +2944,7 @@ const Sessao = (() => {
       itens: [], leitura: null, valorFinal: null, validade: 30,
       mostrarValores: true, orientacoes: true, observacoes: '', pagamento: { descontoVista: 5, parcelas: 3 },
       ocup: {
-        objeto: 'Realização de Exames Ocupacionais',
+        objeto: OBJETO[tipo] || OBJETO.ocupacional,
         secoes: { estrutura: true, pcmso: true, esocial: true, aso: true, laboratorio: true, equipamentos: true, aceite: true, institucional: true },
         apresentacao: '', pagamento: 'O pagamento será realizado em 30 (trinta) dias corridos após a emissão da Nota Fiscal, via PIX ou transferência bancária.',
         prazoDocs: 'de 3 a 4 dias após o recebimento das informações da empresa.', mostrarQtd: 'auto', mostrarTotal: false
@@ -3040,12 +3601,37 @@ ${texto || '(sem texto; use as imagens)'}
   }
 
   /* ---------- baixar / copiar / salvar ---------- */
-  function nomeArquivo() {
+  function nomeArquivo(ext = 'pdf') {
     const slug = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '').slice(0, 40);
     const cli = slug(state.cliente.nome);
-    if (state.tipo === 'particular') return `Orcamento_OPUS_${cli || 'Particular'}_${state.data}.pdf`;
-    if (state.tipo === 'documentos') return `Proposta_Documentos_SST_OPUS_${cli || 'Cliente'}_${state.data}.pdf`;
-    return `Proposta_OPUS_${cli || 'Ocupacional'}_${state.data}.pdf`;
+    if (state.tipo === 'particular') return `Orcamento_OPUS_${cli || 'Particular'}_${state.data}.${ext}`;
+    if (state.tipo === 'documentos') return `Proposta_Documentos_SST_OPUS_${cli || 'Cliente'}_${state.data}.${ext}`;
+    return `Proposta_OPUS_${cli || 'Ocupacional'}_${state.data}.${ext}`;
+  }
+  function baixarBlob(blob, nome) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nome; a.rel = 'noopener'; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+  }
+  async function baixarWord() {
+    const bt = $('#bt-word');
+    if (bt.disabled) return;
+    bt.disabled = true;
+    const tx = $('.tx', bt), antes = tx.textContent;
+    tx.textContent = 'Gerando Word';
+    bt.classList.add('carregando');
+    try {
+      const dd = await gerarDoc();
+      const blob = await WordDoc.gerar(dd);
+      baixarBlob(blob, nomeArquivo('docx'));
+      toast('Word baixado. Abra no Word para editar.');
+      if (!state.exemplo) salvar(true);
+    } catch (e) {
+      console.error(e);
+      toast(/carregar/.test(e && e.message || '') ? 'Não foi possível carregar o gerador de Word. Verifique a internet e tente de novo.' : 'Erro ao montar o arquivo Word.', 4500);
+    } finally { bt.disabled = false; tx.textContent = antes; bt.classList.remove('carregando'); }
   }
   async function baixarPDF() {
     if (!window.pdfMake || !window.pdfMake.vfs) { toast('O gerador de PDF ainda está carregando. Tente de novo em instantes.'); return; }
@@ -3351,6 +3937,10 @@ ${texto || '(sem texto; use as imagens)'}
       toast('Nova proposta em branco.');
     };
     $('#bt-pdf').onclick = baixarPDF;
+    $('#bt-word').onclick = baixarWord;
+    const preparaWord = () => { WordDoc.carregar().catch(() => {}); };
+    $('#bt-word').addEventListener('pointerenter', preparaWord, { once: true });
+    $('#bt-word').addEventListener('focus', preparaWord, { once: true });
     $('#bt-copiar').onclick = copiarTexto;
     $('#bt-salvar').onclick = () => salvar(false);
     $('#copia-ok').onclick = () => { $('#modal-copia').hidden = true; };
