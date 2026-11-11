@@ -327,10 +327,130 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
 @keyframes pulso { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { #bt-word.carregando .ico { animation: none; } }
 
+/* ---------- controle de propostas ---------- */
+.pill.info { background: var(--info-soft); color: var(--info); }
+.btn.ok { background: var(--brand-soft); border-color: transparent; color: var(--brand); }
+.btn.ok:hover { border-color: var(--brand-2); }
+.btn.warn { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.btn.warn:hover { border-color: var(--warn); }
+.nav-pag button { display: inline-flex; align-items: center; gap: 6px; }
+.nav-pag .cnt { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; line-height: 1; }
+.nav-pag button[aria-pressed="true"] .cnt { background: var(--surface); color: var(--brand); }
+body[data-pagina="controle"] .main, body[data-pagina="controle"] .so-prop { display: none !important; }
+
+/* barra de situação no editor */
+.crm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 10px 12px; }
+.crm-bar.st-rascunho { background: var(--brand-soft); border-color: transparent; }
+.crm-bar .crm-tx { flex: 1 1 240px; min-width: 0; font-size: 13px; }
+.crm-bar .crm-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* tela */
+.ctl { max-width: 1500px; margin: 0 auto; padding-block: 18px 48px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.ctl-h { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.ctl-tt { min-width: 0; }
+.ctl-h h1 { font-family: var(--f-display); font-size: 24px; font-weight: 700; letter-spacing: -.015em; margin: 0; text-wrap: balance; }
+.ctl-h p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; max-width: 64ch; }
+.ctl-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.tile { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0; font: inherit; color: inherit; }
+button.tile { cursor: pointer; }
+button.tile:hover { border-color: var(--brand-2); }
+button.tile[aria-pressed="true"] { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+button.tile:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+.t-rot { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.t-rot::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+.t-aberta .t-rot::before { background: var(--warn); }
+.t-ok .t-rot::before { background: var(--brand); }
+.t-err .t-rot::before { background: var(--danger); }
+.t-taxa .t-rot::before { background: var(--info); }
+.t-num { font-family: var(--f-display); font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.t-ok .t-num { color: var(--brand); }
+.t-sub { font-size: 12.3px; color: var(--muted); overflow-wrap: anywhere; }
+.ctl-filtros { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, auto); gap: 8px; }
+.ctl-filtros select { width: auto; }
+.ctl-st-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.ctl-st-row .chips { flex: 1 1 auto; }
+.ctl-qtd { color: var(--muted); font-size: 12.5px; }
+
+/* lista */
+.ctl-lista { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.ctl-row { display: grid; grid-template-columns: 150px minmax(0, 1.5fr) 110px 96px minmax(150px, .8fr) minmax(250px, auto); gap: 6px 14px; align-items: center; padding: 11px 14px; border-top: 1px solid var(--line-2); }
+.ctl-row:first-child { border-top: 0; }
+.ctl-cab { padding-block: 8px; background: var(--surface-2); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.ctl-cab .dir, .c-val { text-align: right; }
+.c-prop, .c-cli, .c-st { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.c-prop b { font-size: 13px; }
+.c-prop .tp { font-size: 12px; font-weight: 600; color: var(--brand); }
+.c-prop small, .c-st small { color: var(--muted); font-size: 11.8px; }
+.c-cli b { overflow-wrap: anywhere; }
+.c-cli .ct { color: var(--muted); font-size: 12.3px; display: flex; flex-wrap: wrap; gap: 0 6px; overflow-wrap: anywhere; }
+.c-cli .ct i { font-style: normal; color: var(--faint); }
+.c-cli a { color: var(--info); text-decoration: none; }
+.c-cli a:hover { text-decoration: underline; }
+.sem { color: var(--faint); font-style: italic; }
+.c-val { font-weight: 700; }
+.c-st .pill { align-self: flex-start; }
+.c-acts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.ctl-row .lbl-m { display: none; }
+.ctl > .hint { margin: 0; }
+
+/* ficha */
+.gav-ficha { width: min(600px, 100%); }
+.fi { display: flex; flex-direction: column; gap: 12px; }
+.fi h3 { margin: 6px 0 -4px; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fi-resumo { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; background: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 10px 12px; }
+.fi-resumo b { display: block; font-size: 15px; overflow-wrap: anywhere; }
+.fi-resumo small { color: var(--muted); font-size: 12.3px; }
+.fi-resumo .fi-val { font-family: var(--f-display); font-size: 18px; color: var(--brand); white-space: nowrap; }
+.fi-st { display: flex; flex-wrap: wrap; gap: 6px; }
+.fi-st button { border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.fi-st button:hover { border-color: var(--brand-2); }
+.fi-st button:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+.fi-st button[aria-pressed="true"] { color: var(--surface); border-color: transparent; background: var(--muted); }
+.fi-st button[data-fi-st="enviada"][aria-pressed="true"] { background: var(--info); }
+.fi-st button[data-fi-st="aguardando"][aria-pressed="true"] { background: var(--warn); }
+.fi-st button[data-fi-st="aprovada"][aria-pressed="true"] { background: var(--brand); }
+.fi-st button[data-fi-st="recusada"][aria-pressed="true"] { background: var(--danger); }
+.fi input[type=email] { width: 100%; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; min-width: 0; }
+.fi-bts { padding-top: 4px; }
+.fi-del { margin-left: auto; display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fi-hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fi-hist li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.fi-hist li > span.num { min-width: 120px; }
+input[type=email] { width: 100%; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 10px; min-width: 0; }
+
+@media (max-width: 1180px) {
+  .ctl-row { grid-template-columns: 130px minmax(0, 1fr) 100px minmax(140px, .7fr); }
+  .ctl-row .c-env { display: none; }
+  .ctl-row .c-acts { grid-column: 1 / -1; justify-content: flex-start; }
+  .ctl-cab span:nth-child(4), .ctl-cab span:nth-child(6) { display: none; }
+}
+@media (max-width: 720px) {
+  .ctl { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .ctl-filtros { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .ctl-filtros input { grid-column: 1 / -1; }
+  .ctl-filtros select { width: 100%; }
+  .ctl-cab { display: none !important; }
+  .ctl-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "cli val" "prop st" "env env" "acts acts"; }
+  .ctl-row .c-cli { grid-area: cli; }
+  .ctl-row .c-val { grid-area: val; }
+  .ctl-row .c-prop { grid-area: prop; flex-direction: row; flex-wrap: wrap; gap: 0 8px; align-items: baseline; }
+  .ctl-row .c-st { grid-area: st; align-items: flex-end; }
+  .ctl-row .c-env { grid-area: env; display: block; font-size: 12.3px; color: var(--muted); }
+  .ctl-row .c-env .lbl-m { display: inline; margin-right: 6px; font-weight: 600; }
+  .ctl-row .c-acts { grid-area: acts; }
+  .ctl-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .t-num { font-size: 22px; }
+  .fi-resumo { flex-direction: column; }
+  .nav-pag { order: 1; }
+}
+.gav-h .pill { white-space: nowrap; }
+@media (max-width: 520px) { .gav-ficha .gav-h #fi-num { display: none; } }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4"/></symbol>
   <symbol id="i-word" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M8.5 11l1.3 5.5 2.2-4.2 2.2 4.2 1.3-5.5"/></symbol>
   <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
   <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></symbol>
@@ -412,19 +532,22 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
       <img id="logo-img" alt="OPUS Saúde Acessível">
       <div><b>Propostas OPUS</b><small>Orçamentos particulares e propostas ocupacionais</small></div>
     </div>
-    <div class="seg" role="group" aria-label="Tipo de proposta">
+    <nav class="seg nav-pag" aria-label="Seções do sistema">
+      <button type="button" id="pag-proposta" aria-pressed="true">Proposta</button>
+      <button type="button" id="pag-controle" aria-pressed="false">Controle <span class="cnt num" id="ctl-cnt" hidden></span></button>
+    </nav>
+    <div class="seg so-prop" id="seg-tipo" role="group" aria-label="Tipo de proposta">
       <button type="button" id="tipo-particular" aria-pressed="true">Particular</button>
       <button type="button" id="tipo-ocupacional" aria-pressed="false">Ocupacional</button>
       <button type="button" id="tipo-documentos" aria-pressed="false">Documentos SST</button>
     </div>
     <div class="acts">
       <button type="button" class="btn ghost" id="bt-nova" title="Nova proposta"><svg class="ico"><use href="#i-plus"/></svg><span class="tx">Nova</span></button>
-      <button type="button" class="btn ghost" id="bt-salvas" title="Propostas salvas"><svg class="ico"><use href="#i-list"/></svg><span class="tx">Salvas</span></button>
       <button type="button" class="btn ghost" id="bt-precos" title="Tabela de preços"><svg class="ico"><use href="#i-tag"/></svg><span class="tx">Preços</span></button>
-      <button type="button" class="btn" id="bt-salvar" title="Salvar proposta"><svg class="ico"><use href="#i-save"/></svg><span class="tx">Salvar</span></button>
-      <button type="button" class="btn" id="bt-copiar" title="Copiar texto para WhatsApp ou e-mail"><svg class="ico"><use href="#i-copy"/></svg><span class="tx">Copiar texto</span></button>
-      <button type="button" class="btn" id="bt-word" title="Baixar em Word (.docx) para editar"><svg class="ico"><use href="#i-word"/></svg><span class="tx">Baixar Word</span></button>
-      <button type="button" class="btn pri" id="bt-pdf"><svg class="ico"><use href="#i-down"/></svg><span class="tx">Baixar PDF</span></button>
+      <button type="button" class="btn so-prop" id="bt-salvar" title="Salvar proposta"><svg class="ico"><use href="#i-save"/></svg><span class="tx">Salvar</span></button>
+      <button type="button" class="btn so-prop" id="bt-copiar" title="Copiar texto para WhatsApp ou e-mail"><svg class="ico"><use href="#i-copy"/></svg><span class="tx">Copiar texto</span></button>
+      <button type="button" class="btn so-prop" id="bt-word" title="Baixar em Word (.docx) para editar"><svg class="ico"><use href="#i-word"/></svg><span class="tx">Baixar Word</span></button>
+      <button type="button" class="btn pri so-prop" id="bt-pdf"><svg class="ico"><use href="#i-down"/></svg><span class="tx">Baixar PDF</span></button>
       <div class="usr">
         <button type="button" class="btn ghost usr-bt" id="bt-usuario" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-usuario"><span class="av" id="usr-av"></span><span class="tx" id="usr-nome"></span></button>
         <div class="usr-menu" id="menu-usuario" role="menu" hidden>
@@ -446,6 +569,7 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
 
   <div class="col-ed">
     <div class="banner warn" id="aviso-senha" hidden><svg class="ico" aria-hidden="true"><use href="#i-key"/></svg><span id="aviso-senha-tx"></span><button type="button" class="btn sm" id="aviso-senha-bt">Trocar agora</button></div>
+    <div class="crm-bar" id="crm-bar" hidden aria-live="polite"></div>
     <section class="card" aria-labelledby="h-sol">
       <div class="card-h"><span class="n">1</span><h2 id="h-sol">Solicitação do cliente</h2></div>
       <div class="banner" id="banner-exemplo" hidden><span>Exemplo carregado para mostrar como funciona. Use <b>Nova</b> para começar uma proposta em branco.</span></div>
@@ -473,15 +597,20 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
       <div class="grid2" id="cli-part">
         <label class="f span2"><span>Nome do paciente</span><input type="text" id="c-nome-p" autocomplete="off"></label>
         <label class="f"><span>Telefone</span><input type="text" id="c-tel" inputmode="tel" autocomplete="off"></label>
+        <label class="f"><span>E-mail</span><input type="email" id="c-email-p" inputmode="email" autocomplete="off" spellcheck="false"></label>
         <label class="f"><span>Validade (dias)</span><input type="number" id="c-val-p" min="1" max="365"></label>
+        <p class="hint span2" style="margin:0">O e-mail fica no controle de propostas e não aparece no PDF.</p>
       </div>
       <div class="grid2" id="cli-ocup" hidden>
         <label class="f span2"><span>Empresa (destinatário)</span><input type="text" id="c-nome-o" autocomplete="off"></label>
         <label class="f"><span>A/C (contato)</span><input type="text" id="c-contato" autocomplete="off"></label>
         <label class="f"><span>CNPJ</span><input type="text" id="c-cnpj" autocomplete="off"></label>
+        <label class="f"><span>Telefone do contato</span><input type="text" id="c-tel-o" inputmode="tel" autocomplete="off"></label>
+        <label class="f"><span>E-mail do contato</span><input type="email" id="c-email-o" inputmode="email" autocomplete="off" spellcheck="false"></label>
         <label class="f span2"><span>Objeto da proposta</span><input type="text" id="c-objeto"></label>
         <label class="f"><span>Validade (dias)</span><input type="number" id="c-val-o" min="1" max="365"></label>
         <label class="f"><span>Data</span><input type="date" id="c-data-o"></label>
+        <p class="hint span2" style="margin:0">Telefone e e-mail do contato ficam no controle de propostas e não aparecem no PDF.</p>
       </div>
     </section>
 
@@ -554,13 +683,66 @@ input[type=email], input[type=password] { width: 100%; background: var(--surface
   </aside>
 </div>
 
-<div class="veu" id="veu" hidden></div>
-<aside class="gaveta" id="gav-salvas" hidden aria-labelledby="h-salvas">
-  <div class="gav-h"><h2 id="h-salvas">Propostas salvas</h2><span class="pill" id="salvas-onde"></span><button type="button" class="btn ghost" data-fechar><svg class="ico"><use href="#i-x"/></svg>Fechar</button></div>
-  <div class="gav-b">
-    <input type="search" id="salvas-q" placeholder="Buscar por cliente ou número" aria-label="Buscar propostas salvas">
-    <div class="salvas mt" id="salvas"></div>
+<section class="ctl" id="controle" hidden aria-labelledby="h-ctl">
+  <div class="ctl-h">
+    <div class="ctl-tt"><h1 id="h-ctl">Controle de propostas</h1><p>Particulares, ocupacionais e de documentos: quem recebeu, quando foi enviada e qual foi a resposta.</p></div>
+    <div class="row">
+      <button type="button" class="btn ghost" id="ctl-atualizar"><svg class="ico"><use href="#i-refresh"/></svg>Atualizar</button>
+      <button type="button" class="btn" id="ctl-exportar"><svg class="ico"><use href="#i-down"/></svg>Exportar planilha</button>
+      <button type="button" class="btn pri" id="ctl-nova"><svg class="ico"><use href="#i-plus"/></svg>Nova proposta</button>
+    </div>
   </div>
+  <div class="ctl-resumo" id="ctl-resumo" aria-label="Resumo"></div>
+  <div class="ctl-filtros">
+    <input type="search" id="ctl-q" placeholder="Buscar por cliente, contato, e-mail, telefone ou número" aria-label="Buscar propostas">
+    <select id="ctl-tipo" aria-label="Tipo de proposta"><option value="">Todos os tipos</option><option value="particular">Particular</option><option value="ocupacional">Ocupacional</option><option value="documentos">Documentos SST</option></select>
+    <select id="ctl-periodo" aria-label="Período"><option value="">Todo o período</option><option value="mes">Este mês</option><option value="mesant">Mês passado</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="ano">Este ano</option></select>
+    <select id="ctl-resp" aria-label="Responsável" hidden></select>
+  </div>
+  <div class="ctl-st-row"><div class="chips" id="ctl-status" aria-label="Filtrar por situação"></div><span class="ctl-qtd num" id="ctl-qtd"></span></div>
+  <div class="ctl-lista" id="ctl-lista"></div>
+  <p class="hint">O período considera a data de envio; para propostas ainda não enviadas, a data em que foram criadas.</p>
+</section>
+
+<div class="veu" id="veu" hidden></div>
+<aside class="gaveta gav-ficha" id="gav-ficha" hidden aria-labelledby="h-ficha">
+  <div class="gav-h"><h2 id="h-ficha">Acompanhamento</h2><span class="pill" id="fi-num"></span><button type="button" class="btn ghost" data-fechar><svg class="ico"><use href="#i-x"/></svg>Fechar</button></div>
+  <form class="gav-b fi" id="f-ficha" novalidate>
+    <div class="fi-resumo" id="fi-resumo"></div>
+    <button type="button" class="btn sm" id="fi-abrir" style="align-self:flex-start">Abrir proposta</button>
+    <h3>Situação</h3>
+    <input type="hidden" id="fi-st-atual">
+    <div class="fi-st" role="group" aria-label="Situação da proposta">
+      <button type="button" data-fi-st="rascunho">Não enviada</button>
+      <button type="button" data-fi-st="enviada">Enviada</button>
+      <button type="button" data-fi-st="aguardando">Aguardando confirmação</button>
+      <button type="button" data-fi-st="aprovada">Aprovada</button>
+      <button type="button" data-fi-st="recusada">Não aprovada</button>
+    </div>
+    <div class="grid3">
+      <label class="f" id="fi-env-l"><span>Data do envio</span><input type="date" id="fi-env"></label>
+      <label class="f" id="fi-apr-l"><span>Data da aprovação</span><input type="date" id="fi-apr"></label>
+      <label class="f" id="fi-rec-l"><span>Data da resposta</span><input type="date" id="fi-rec"></label>
+    </div>
+    <h3>Contato que recebeu</h3>
+    <div class="grid2">
+      <label class="f span2"><span>Nome</span><input type="text" id="fi-nome" autocomplete="off"></label>
+      <label class="f"><span>E-mail</span><input type="email" id="fi-email" inputmode="email" autocomplete="off" spellcheck="false"></label>
+      <label class="f"><span>Telefone</span><input type="text" id="fi-tel" inputmode="tel" autocomplete="off"></label>
+    </div>
+    <label class="f"><span>Anotações</span><textarea id="fi-obs" rows="3" placeholder="Ex.: cliente pediu para retornar na sexta; negociou desconto; falou com o RH."></textarea></label>
+    <p class="erro" id="fi-erro" role="alert" hidden></p>
+    <div class="row fi-bts">
+      <button type="submit" class="btn pri" id="fi-salvar">Salvar acompanhamento</button>
+      <button type="button" class="btn ghost" id="fi-cancelar">Cancelar</button>
+      <span class="fi-del">
+        <button type="button" class="btn sm ghost" id="fi-excluir">Excluir proposta</button>
+        <span id="fi-excluir-conf" hidden><span class="hint" style="margin:0">Excluir de vez?</span> <button type="button" class="btn sm" id="fi-excluir-sim">Sim, excluir</button> <button type="button" class="btn sm ghost" id="fi-excluir-nao">Não</button></span>
+      </span>
+    </div>
+    <h3>Histórico</h3>
+    <ul class="fi-hist" id="fi-hist"></ul>
+  </form>
 </aside>
 <aside class="gaveta" id="gav-precos" hidden aria-labelledby="h-precos">
   <div class="gav-h"><h2 id="h-precos">Tabela de preços</h2><span class="pill" id="precos-onde"></span><button type="button" class="btn ghost" data-fechar><svg class="ico"><use href="#i-x"/></svg>Fechar</button></div>
@@ -2855,6 +3037,375 @@ const Sessao = (() => {
 
 </script>
 <script>
+/* ===== Controle de propostas (CRM) =====
+   Situação de cada proposta (não enviada, enviada, aguardando confirmação, aprovada, não aprovada),
+   contato, datas de envio e aprovação, anotações e histórico. Os dados ficam em propostas_geradas. */
+const CRM = (() => {
+  'use strict';
+  const ST = {
+    rascunho: { nome: 'Não enviada', plural: 'Não enviadas', cls: '' },
+    enviada: { nome: 'Enviada', plural: 'Enviadas', cls: 'info' },
+    aguardando: { nome: 'Aguardando confirmação', plural: 'Aguardando confirmação', cls: 'warn' },
+    aprovada: { nome: 'Aprovada', plural: 'Aprovadas', cls: 'ok' },
+    recusada: { nome: 'Não aprovada', plural: 'Não aprovadas', cls: 'err' }
+  };
+  const ORDEM = ['rascunho', 'enviada', 'aguardando', 'aprovada', 'recusada'];
+  const TIPO = { particular: 'Particular', ocupacional: 'Ocupacional', documentos: 'Documentos SST' };
+  const COLS = 'status, contato_nome, contato_email, contato_telefone, enviada_em, aprovada_em, recusada_em, crm_obs, status_em, status_por';
+  const LISTA = 'id, numero, tipo, cliente, total, itens, criado_por, criado_em, atualizado_em, historico, ' + COLS;
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const pad = n => String(n).padStart(2, '0');
+  const isoLocal = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const hoje = () => isoLocal(new Date());
+  const dataBR = iso => { if (!iso) return ''; const [a, m, d] = String(iso).slice(0, 10).split('-'); return `${d}/${m}/${a}`; };
+  const diaDe = ts => ts ? isoLocal(new Date(ts)) : '';
+  const horaBR = ts => ts ? new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  const digitos = t => String(t || '').replace(/\D/g, '');
+
+  let X = null;                 // contexto vindo do app (sb, eu, admin, toast, brl, esc, norm, abrir, nova, estado)
+  let lista = [], carregadaEm = 0, equipe = {}, atual = null, fichaId = null, fichaRow = null, filtroSt = 'todas';
+
+  const esc = s => X.esc(s);
+  const brl = v => X.brl(+v || 0);
+  const nomeDe = id => {
+    if (!id) return '';
+    if (X.eu && id === X.eu.id) return 'você';
+    const n = equipe[id]; if (!n) return '';
+    return n.includes('@') ? n.split('@')[0] : n.split(' ')[0];
+  };
+  const pill = st => `<span class="pill ${ST[st] ? ST[st].cls : ''}">${esc(ST[st] ? ST[st].nome : st)}</span>`;
+  const whats = tel => { const d = digitos(tel); if (d.length < 10) return ''; return 'https://wa.me/' + (d.length <= 11 ? '55' + d : d); };
+
+  /* ---------- dados ---------- */
+  async function carregarEquipe() {
+    try { const { data } = await X.sb.rpc('propostas_equipe'); equipe = Object.fromEntries((data || []).map(r => [r.id, r.nome])); } catch { /* opcional */ }
+  }
+  async function carregar(forcar = false) {
+    if (!forcar && Date.now() - carregadaEm < 20000 && lista.length) { render(); return; }
+    const box = $('#ctl-lista');
+    if (!lista.length) box.innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Carregando propostas</div>';
+    const [res] = await Promise.all([
+      X.sb.from('propostas_geradas').select(LISTA).order('atualizado_em', { ascending: false }).limit(2000),
+      Object.keys(equipe).length ? null : carregarEquipe()
+    ]);
+    if (res.error) { box.innerHTML = '<div class="vazio">Não foi possível carregar as propostas. Verifique a internet e use Atualizar.</div>'; return; }
+    lista = res.data || []; carregadaEm = Date.now();
+    render(); contador();
+  }
+  async function contador() {
+    let abertas;
+    if (carregadaEm) abertas = lista.filter(r => r.status === 'enviada' || r.status === 'aguardando').length;
+    else {
+      const { data } = await X.sb.from('propostas_geradas').select('id, status').limit(5000);
+      abertas = (data || []).filter(r => r.status === 'enviada' || r.status === 'aguardando').length;
+    }
+    const c = $('#ctl-cnt'); c.textContent = abertas ? String(abertas) : ''; c.hidden = !abertas;
+    c.title = abertas ? `${abertas} ${abertas === 1 ? 'proposta' : 'propostas'} enviada${abertas === 1 ? '' : 's'} sem resposta` : '';
+  }
+  function trocarNaLista(row) {
+    const i = lista.findIndex(r => r.id === row.id);
+    if (i >= 0) lista[i] = { ...lista[i], ...row }; else if (carregadaEm) lista.unshift(row);
+  }
+  async function atualizar(id, patch, msg) {
+    const { data, error } = await X.sb.from('propostas_geradas').update(patch).eq('id', id).select(LISTA);
+    if (error || !data || !data.length) {
+      X.toast(error ? 'Não foi possível atualizar a proposta. Verifique a internet e tente de novo.' : 'Seu acesso precisa ser confirmado. Entre novamente.', 4500);
+      return null;
+    }
+    const row = data[0];
+    trocarNaLista(row);
+    if (atual && atual.id === row.id) { atual = { ...atual, ...row }; barra(); }
+    if (document.body.dataset.pagina === 'controle') render();
+    contador();
+    if (msg) X.toast(msg, 4000);
+    return row;
+  }
+
+  /* ---------- ações rápidas ---------- */
+  function rapida(id, acao) {
+    const r = lista.find(x => x.id === id) || (atual && atual.id === id ? atual : null);
+    if (!r) return;
+    const env = r.enviada_em || hoje();
+    if (acao === 'envio') return abrirFicha(id, 'enviada');
+    if (acao === 'aguardando') return atualizar(id, { status: 'aguardando', enviada_em: env }, `Proposta ${r.numero}: aguardando confirmação.`);
+    if (acao === 'aprovada') return atualizar(id, { status: 'aprovada', enviada_em: env, aprovada_em: hoje() }, `Proposta ${r.numero} aprovada em ${dataBR(hoje())}. Para mudar a data, abra a ficha.`);
+    if (acao === 'recusada') return atualizar(id, { status: 'recusada', enviada_em: env, recusada_em: hoje() }, `Proposta ${r.numero} marcada como não aprovada.`);
+    if (acao === 'ficha') return abrirFicha(id);
+    if (acao === 'abrir') { irPara('proposta'); return X.abrir(id); }
+  }
+  function botoes(r, compacto = false) {
+    const b = (acao, txt, cls = '') => `<button type="button" class="btn sm ${cls}" data-acao="${acao}" data-id="${esc(r.id)}">${txt}</button>`;
+    const out = [];
+    if (r.status === 'rascunho') out.push(b('envio', 'Registrar envio', 'pri'));
+    if (r.status === 'enviada') out.push(b('aguardando', 'Aguardando confirmação', 'warn'), b('aprovada', 'Aprovada', 'ok'));
+    if (r.status === 'aguardando') out.push(b('aprovada', 'Aprovada', 'ok'), b('recusada', 'Não aprovada', 'ghost'));
+    out.push(b('ficha', 'Ficha', 'ghost'));
+    if (compacto) out.push(b('abrir', 'Abrir', 'ghost'));
+    return out.join('');
+  }
+
+  /* ---------- tela Controle ---------- */
+  function refData(r) { return r.enviada_em || diaDe(r.criado_em); }
+  function periodo() {
+    const v = $('#ctl-periodo').value, d = new Date();
+    if (v === 'mes') return [isoLocal(new Date(d.getFullYear(), d.getMonth(), 1)), hoje()];
+    if (v === 'mesant') return [isoLocal(new Date(d.getFullYear(), d.getMonth() - 1, 1)), isoLocal(new Date(d.getFullYear(), d.getMonth(), 0))];
+    if (v === '30') return [isoLocal(new Date(Date.now() - 29 * 864e5)), hoje()];
+    if (v === '90') return [isoLocal(new Date(Date.now() - 89 * 864e5)), hoje()];
+    if (v === 'ano') return [`${d.getFullYear()}-01-01`, hoje()];
+    return null;
+  }
+  function filtrados(ignorarStatus = false) {
+    const q = X.norm($('#ctl-q').value || '');
+    const tipo = $('#ctl-tipo').value, resp = $('#ctl-resp').value, per = periodo();
+    return lista.filter(r => {
+      if (tipo && r.tipo !== tipo) return false;
+      if (resp && r.criado_por !== resp) return false;
+      if (per) { const d = refData(r); if (d < per[0] || d > per[1]) return false; }
+      if (!ignorarStatus && filtroSt !== 'todas') {
+        if (filtroSt === 'abertas' ? !(r.status === 'enviada' || r.status === 'aguardando') : r.status !== filtroSt) return false;
+      }
+      if (q) {
+        const alvo = X.norm(`${r.cliente || ''} ${r.contato_nome || ''} ${r.contato_email || ''} ${r.numero || ''}`) + ' ' + digitos(r.contato_telefone);
+        if (!q.split(' ').every(p => alvo.includes(p) || (digitos(p) && alvo.includes(digitos(p))))) return false;
+      }
+      return true;
+    });
+  }
+  function render() {
+    renderResp();
+    const base = filtrados(true);
+    const n = st => base.filter(r => r.status === st);
+    const soma = a => a.reduce((s, r) => s + (+r.total || 0), 0);
+    const abertas = base.filter(r => r.status === 'enviada' || r.status === 'aguardando');
+    const aprov = n('aprovada'), rec = n('recusada'), aguard = n('aguardando');
+    const enviadas = abertas.length + aprov.length + rec.length;
+    const taxa = enviadas ? Math.round(aprov.length / enviadas * 100) : null;
+    const tile = (cls, rot, num, sub, st) => `<button type="button" class="tile ${cls}" data-st="${st}" aria-pressed="${filtroSt === st}"><span class="t-rot">${rot}</span><b class="t-num num">${num}</b><span class="t-sub num">${sub}</span></button>`;
+    $('#ctl-resumo').innerHTML =
+      tile('t-aberta', 'Em aberto', abertas.length, `${brl(soma(abertas))}${aguard.length ? ` · ${aguard.length} aguardando confirmação` : ''}`, 'abertas') +
+      tile('t-ok', 'Aprovadas', aprov.length, brl(soma(aprov)), 'aprovada') +
+      tile('t-err', 'Não aprovadas', rec.length, brl(soma(rec)), 'recusada') +
+      `<div class="tile t-taxa"><span class="t-rot">Taxa de aprovação</span><b class="t-num num">${taxa == null ? '–' : taxa + '%'}</b><span class="t-sub num">${enviadas ? `${aprov.length} de ${enviadas} ${enviadas === 1 ? 'enviada' : 'enviadas'}` : 'Nenhuma proposta enviada no período'}</span></div>` +
+      tile('t-ras', 'Não enviadas', n('rascunho').length, 'Salvas, sem registro de envio', 'rascunho');
+
+    const chips = [['todas', 'Todas', base.length], ['abertas', 'Em aberto', abertas.length]].concat(ORDEM.map(s => [s, ST[s].plural, n(s).length]));
+    $('#ctl-status').innerHTML = chips.map(([k, t, c]) => `<button type="button" class="chip" data-st="${k}" aria-pressed="${filtroSt === k}">${esc(t)} <span class="v num">${c}</span></button>`).join('');
+
+    const rows = filtrados();
+    const box = $('#ctl-lista');
+    $('#ctl-qtd').textContent = rows.length ? `${rows.length} ${rows.length === 1 ? 'proposta' : 'propostas'} · ${brl(soma(rows))}` : '';
+    if (!lista.length) { box.innerHTML = '<div class="vazio">Nenhuma proposta salva ainda. Toda proposta salva, baixada em PDF ou Word ou copiada aparece aqui. Depois de mandar ao cliente, use <b>Registrar envio</b>.</div>'; return; }
+    if (!rows.length) { box.innerHTML = '<div class="vazio">Nenhuma proposta com esses filtros.</div>'; return; }
+    box.innerHTML = `<div class="ctl-row ctl-cab" aria-hidden="true"><span>Proposta</span><span>Cliente e contato</span><span class="dir">Valor</span><span>Envio</span><span>Situação</span><span></span></div>` + rows.map(r => {
+      const w = whats(r.contato_telefone);
+      const contato = [r.contato_nome && r.contato_nome !== r.cliente ? `<span>${esc(r.contato_nome)}</span>` : '',
+        r.contato_email ? `<a href="mailto:${esc(r.contato_email)}">${esc(r.contato_email)}</a>` : '',
+        r.contato_telefone ? (w ? `<a href="${w}" target="_blank" rel="noopener" title="Abrir conversa no WhatsApp">${esc(r.contato_telefone)}</a>` : `<span>${esc(r.contato_telefone)}</span>`) : ''].filter(Boolean).join('<i>·</i>');
+      const situ = r.status === 'aprovada' ? `em ${dataBR(r.aprovada_em)}` : r.status === 'recusada' ? `em ${dataBR(r.recusada_em)}`
+        : r.status === 'aguardando' ? `desde ${dataBR(diaDe(r.status_em) || r.enviada_em)}` : '';
+      const por = nomeDe(r.criado_por);
+      return `<div class="ctl-row st-${esc(r.status)}" data-id="${esc(r.id)}">
+        <div class="c-prop"><b class="num">${esc(r.numero)}</b><span class="tp">${esc(TIPO[r.tipo] || r.tipo)}</span><small>Criada em ${dataBR(diaDe(r.criado_em))}${por ? ' por ' + esc(por) : ''}</small></div>
+        <div class="c-cli"><b>${esc(r.cliente || 'Sem nome')}</b>${contato ? `<small class="ct">${contato}</small>` : '<small class="ct sem">Sem contato registrado</small>'}</div>
+        <div class="c-val num"><span class="lbl-m">Valor</span>${brl(r.total)}</div>
+        <div class="c-env num"><span class="lbl-m">Envio</span>${r.enviada_em ? dataBR(r.enviada_em) : '<span class="sem">Não enviada</span>'}</div>
+        <div class="c-st">${pill(r.status)}${situ ? `<small class="num">${situ}</small>` : ''}</div>
+        <div class="c-acts">${botoes(r, true)}</div>
+      </div>`;
+    }).join('');
+  }
+  function renderResp() {
+    const sel = $('#ctl-resp'), atualV = sel.value;
+    const ids = [...new Set(lista.map(r => r.criado_por).filter(Boolean))];
+    if (ids.length < 2) { sel.hidden = true; sel.value = ''; return; }
+    sel.hidden = false;
+    const ops = ['<option value="">Toda a equipe</option>'].concat(ids.map(id => `<option value="${esc(id)}">${esc(id === X.eu.id ? 'Minhas propostas' : (equipe[id] || 'Outro usuário'))}</option>`));
+    const html = ops.join('');
+    if (sel.dataset.h !== html) { sel.innerHTML = html; sel.dataset.h = html; sel.value = ids.includes(atualV) ? atualV : ''; }
+  }
+
+  /* ---------- exportar ---------- */
+  function exportar() {
+    const rows = filtrados();
+    if (!rows.length) { X.toast('Nenhuma proposta para exportar com esses filtros.'); return; }
+    const cab = ['Número', 'Tipo', 'Cliente', 'Contato', 'E-mail', 'Telefone', 'Valor (R$)', 'Criada em', 'Criada por', 'Enviada em', 'Situação', 'Aprovada em', 'Não aprovada em', 'Anotações'];
+    const cel = v => { const s = String(v == null ? '' : v); return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const linhas = rows.map(r => [r.numero, TIPO[r.tipo] || r.tipo, r.cliente, r.contato_nome, r.contato_email, r.contato_telefone,
+      (+r.total || 0).toFixed(2).replace('.', ','), dataBR(diaDe(r.criado_em)), equipe[r.criado_por] || '', dataBR(r.enviada_em),
+      ST[r.status] ? ST[r.status].nome : r.status, dataBR(r.aprovada_em), dataBR(r.recusada_em), r.crm_obs].map(cel).join(';'));
+    const csv = '﻿' + [cab.join(';')].concat(linhas).join('\r\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = `Controle_Propostas_OPUS_${hoje()}.csv`; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    X.toast(`Planilha com ${rows.length} ${rows.length === 1 ? 'proposta' : 'propostas'} baixada.`);
+  }
+
+  /* ---------- ficha de acompanhamento ---------- */
+  function contatoPadrao(est) {
+    const c = (est && est.cliente) || {};
+    return { nome: est && est.tipo !== 'particular' ? (c.contato || c.nome || '') : (c.nome || ''), email: c.email || '', telefone: c.telefone || '' };
+  }
+  async function abrirFicha(id, novoStatus) {
+    fichaId = id;
+    let r = lista.find(x => x.id === id) || (atual && atual.id === id ? atual : null);
+    const { data, error } = await X.sb.from('propostas_geradas').select(LISTA + ', estado').eq('id', id).maybeSingle();
+    if (error || !data) { X.toast('Não foi possível abrir a ficha desta proposta.'); return; }
+    r = data; fichaRow = data;
+    const est = data.estado || {};
+    const cp = contatoPadrao(est);
+    $('#fi-num').textContent = 'Nº ' + r.numero;
+    const por = nomeDe(r.criado_por);
+    $('#fi-resumo').innerHTML = `<div><b>${esc(r.cliente || 'Sem nome')}</b><small>${esc(TIPO[r.tipo] || r.tipo)} · ${r.itens} ${r.itens === 1 ? 'item' : 'itens'} · Criada em ${dataBR(diaDe(r.criado_em))}${por ? ' por ' + esc(por) : ''}</small></div><b class="num fi-val">${brl(r.total)}</b>`;
+    $('#fi-nome').value = r.contato_nome || cp.nome;
+    $('#fi-email').value = r.contato_email || cp.email;
+    $('#fi-tel').value = r.contato_telefone || cp.telefone;
+    $('#fi-obs').value = r.crm_obs || '';
+    $('#fi-env').value = r.enviada_em || '';
+    $('#fi-apr').value = r.aprovada_em || '';
+    $('#fi-rec').value = r.recusada_em || '';
+    $('#fi-erro').hidden = true;
+    $('#fi-excluir').hidden = !(X.admin || r.criado_por === X.eu.id);
+    $('#fi-excluir-conf').hidden = true;
+    marcarStatus(novoStatus || r.status, !!novoStatus);
+    const h = Array.isArray(r.historico) ? [...r.historico].reverse() : [];
+    $('#fi-hist').innerHTML = h.length ? h.map(e => `<li><span class="num">${esc(horaBR(e.em))}</span>${pill(e.status)}${e.por ? `<small>por ${esc(nomeDe(e.por) || 'equipe')}</small>` : ''}</li>`).join('') : '<li class="sem">Sem registros ainda.</li>';
+    X.abrirGaveta('#gav-ficha');
+    setTimeout(() => (novoStatus === 'enviada' ? $('#fi-nome') : $('[data-fi-st][aria-pressed="true"]')).focus(), 50);
+  }
+  function marcarStatus(st, preencher) {
+    for (const b of $$('[data-fi-st]')) b.setAttribute('aria-pressed', String(b.dataset.fiSt === st));
+    $('#fi-st-atual').value = st;
+    const enviada = st !== 'rascunho';
+    $('#fi-env-l').hidden = !enviada;
+    $('#fi-apr-l').hidden = st !== 'aprovada';
+    $('#fi-rec-l').hidden = st !== 'recusada';
+    if (preencher) {
+      if (enviada && !$('#fi-env').value) $('#fi-env').value = hoje();
+      if (st === 'aprovada' && !$('#fi-apr').value) $('#fi-apr').value = hoje();
+      if (st === 'recusada' && !$('#fi-rec').value) $('#fi-rec').value = hoje();
+    }
+  }
+  async function salvarFicha(ev) {
+    ev.preventDefault();
+    const st = $('#fi-st-atual').value;
+    const env = $('#fi-env').value, apr = $('#fi-apr').value, rec = $('#fi-rec').value;
+    const email = $('#fi-email').value.trim();
+    const erro = msg => { const e = $('#fi-erro'); e.textContent = msg; e.hidden = false; };
+    if (st !== 'rascunho' && !env) return erro('Informe a data do envio.');
+    if (st === 'aprovada' && !apr) return erro('Informe a data da aprovação.');
+    if (st === 'recusada' && !rec) return erro('Informe a data da resposta do cliente.');
+    if (st === 'aprovada' && apr < env) return erro('A data da aprovação não pode ser antes do envio.');
+    if (st === 'recusada' && rec < env) return erro('A data da resposta não pode ser antes do envio.');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return erro('Confira o e-mail do contato.');
+    $('#fi-erro').hidden = true;
+    const patch = {
+      status: st, contato_nome: $('#fi-nome').value.trim() || null, contato_email: email || null, contato_telefone: $('#fi-tel').value.trim() || null,
+      crm_obs: $('#fi-obs').value.trim() || null,
+      enviada_em: st === 'rascunho' ? null : env, aprovada_em: st === 'aprovada' ? apr : null, recusada_em: st === 'recusada' ? rec : null
+    };
+    const bt = $('#fi-salvar'); bt.disabled = true;
+    const row = await atualizar(fichaId, patch, 'Acompanhamento salvo.');
+    bt.disabled = false;
+    if (row) X.fecharGaveta();
+  }
+  async function excluir() {
+    const r = fichaRow; if (!r) return;
+    const { data, error } = await X.sb.from('propostas_geradas').delete().eq('id', r.id).select('id');
+    if (error || !data || !data.length) { X.toast(error ? 'Não foi possível excluir. Verifique a internet.' : 'Só quem criou a proposta ou um administrador pode excluir.', 4000); return; }
+    lista = lista.filter(x => x.id !== r.id);
+    if (atual && atual.id === r.id) { atual = null; barra(); }
+    X.aoExcluir(r.id);
+    X.fecharGaveta(); render(); contador();
+    X.toast(`Proposta ${r.numero} excluída.`);
+  }
+
+  /* ---------- barra de situação no editor ---------- */
+  function barra() {
+    const el = $('#crm-bar');
+    const est = X.estado();
+    if (!atual || !est || est.exemplo || est.dbId !== atual.id) { el.hidden = true; return; }
+    const r = atual;
+    let tx = '';
+    if (r.status === 'rascunho') tx = 'Proposta salva. Quando mandar ao cliente, registre o envio para acompanhar a resposta.';
+    else if (r.status === 'enviada') tx = `Enviada em ${dataBR(r.enviada_em)}${r.contato_nome ? ' para ' + esc(r.contato_nome) : ''}.`;
+    else if (r.status === 'aguardando') tx = `Enviada em ${dataBR(r.enviada_em)}. Aguardando confirmação desde ${dataBR(diaDe(r.status_em) || r.enviada_em)}.`;
+    else if (r.status === 'aprovada') tx = `Aprovada em ${dataBR(r.aprovada_em)}.`;
+    else if (r.status === 'recusada') tx = `Não aprovada (resposta em ${dataBR(r.recusada_em)}).`;
+    el.className = 'crm-bar st-' + r.status;
+    el.innerHTML = `${pill(r.status)}<span class="crm-tx">${tx}</span><span class="crm-acts">${botoes(r)}</span>`;
+    el.hidden = false;
+  }
+  async function carregarAtual(id) {
+    if (!id) { atual = null; barra(); return; }
+    const { data } = await X.sb.from('propostas_geradas').select('id, numero, ' + COLS).eq('id', id).maybeSingle();
+    atual = data || null; barra();
+  }
+  // campos de contato preenchidos a partir do cliente da proposta, sem apagar o que foi editado na ficha
+  function contatoParaSalvar(est) {
+    const cp = contatoPadrao(est), out = {};
+    const tem = k => atual && atual.id === est.dbId && atual[k];
+    if (cp.nome && !tem('contato_nome')) out.contato_nome = cp.nome;
+    if (cp.email && !tem('contato_email')) out.contato_email = cp.email;
+    if (cp.telefone && !tem('contato_telefone')) out.contato_telefone = cp.telefone;
+    return out;
+  }
+  function aoSalvar(row) { if (!row) return; atual = { ...(atual && atual.id === row.id ? atual : {}), ...row }; trocarNaLista({ ...row }); barra(); if (carregadaEm) contador(); }
+  function aoAbrir(row) { atual = row || null; barra(); }
+  function aoNova() { atual = null; barra(); }
+
+  /* ---------- navegação ---------- */
+  function irPara(pag) {
+    document.body.dataset.pagina = pag;
+    $('#pag-proposta').setAttribute('aria-pressed', String(pag === 'proposta'));
+    $('#pag-controle').setAttribute('aria-pressed', String(pag === 'controle'));
+    $('#controle').hidden = pag !== 'controle';
+    window.scrollTo(0, 0);
+    if (pag === 'controle') carregar();
+  }
+
+  function ligar() {
+    $('#pag-proposta').onclick = () => irPara('proposta');
+    $('#pag-controle').onclick = () => irPara('controle');
+    $('#ctl-atualizar').onclick = () => carregar(true);
+    $('#ctl-exportar').onclick = exportar;
+    $('#ctl-nova').onclick = () => { irPara('proposta'); X.nova(); };
+    for (const id of ['#ctl-q', '#ctl-tipo', '#ctl-periodo', '#ctl-resp']) $(id).addEventListener(id === '#ctl-q' ? 'input' : 'change', render);
+    const st = e => { const b = e.target.closest('[data-st]'); if (!b) return; const v = b.dataset.st; filtroSt = filtroSt === v && v !== 'todas' ? 'todas' : v; render(); };
+    $('#ctl-status').addEventListener('click', st);
+    $('#ctl-resumo').addEventListener('click', st);
+    const acao = e => { const b = e.target.closest('[data-acao]'); if (!b) return; b.disabled = true; Promise.resolve(rapida(b.dataset.id, b.dataset.acao)).finally(() => { b.disabled = false; }); };
+    $('#ctl-lista').addEventListener('click', acao);
+    $('#crm-bar').addEventListener('click', acao);
+    $('#gav-ficha').addEventListener('click', e => { const b = e.target.closest('[data-fi-st]'); if (b) marcarStatus(b.dataset.fiSt, true); });
+    $('#f-ficha').addEventListener('submit', salvarFicha);
+    $('#fi-cancelar').onclick = () => X.fecharGaveta();
+    $('#fi-abrir').onclick = () => { const id = fichaId; X.fecharGaveta(); irPara('proposta'); X.abrir(id); };
+    $('#fi-excluir').onclick = () => { $('#fi-excluir-conf').hidden = false; $('#fi-excluir').hidden = true; };
+    $('#fi-excluir-nao').onclick = () => { $('#fi-excluir-conf').hidden = true; $('#fi-excluir').hidden = false; };
+    $('#fi-excluir-sim').onclick = excluir;
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && document.body.dataset.pagina === 'controle') carregar(); });
+  }
+
+  function iniciar(ctx) {
+    X = ctx;
+    ligar();
+    document.body.dataset.pagina = 'proposta';
+    carregarEquipe();
+    contador().catch(() => {});
+    const est = X.estado();
+    if (est && est.dbId && !est.exemplo) carregarAtual(est.dbId).catch(() => {});
+  }
+
+  return { iniciar, irPara, COLS, aoSalvar, aoAbrir, aoNova, contatoParaSalvar, carregarAtual };
+})();
+
+</script>
+<script>
 /* ===== Propostas OPUS: estado, interface e integrações ===== */
 (() => {
   'use strict';
@@ -2977,7 +3528,7 @@ const Sessao = (() => {
 
   /* ---------- capacidades da página ---------- */
   const CAP = { dl: null, sample: null, imagens: false, imagensMax: 5, tiposImg: [] };
-  let salvasLista = [], salvasCarregadas = false;
+
 
   /* ---------- toast / status ---------- */
   let toastT;
@@ -3309,6 +3860,9 @@ ${texto || '(sem texto; use as imagens)'}
     ['#c-nome-p', s => s.cliente.nome, (s, v) => { s.cliente.nome = v; }],
     ['#c-nome-o', s => s.cliente.nome, (s, v) => { s.cliente.nome = v; }],
     ['#c-tel', s => s.cliente.telefone, (s, v) => { s.cliente.telefone = v; }],
+    ['#c-tel-o', s => s.cliente.telefone, (s, v) => { s.cliente.telefone = v; }],
+    ['#c-email-p', s => s.cliente.email, (s, v) => { s.cliente.email = v.trim(); }],
+    ['#c-email-o', s => s.cliente.email, (s, v) => { s.cliente.email = v.trim(); }],
     ['#c-contato', s => s.cliente.contato, (s, v) => { s.cliente.contato = v; }],
     ['#c-cnpj', s => s.cliente.cnpj, (s, v) => { s.cliente.cnpj = v; }],
     ['#c-objeto', s => s.ocup.objeto, (s, v) => { s.ocup.objeto = v; }],
@@ -3676,8 +4230,8 @@ ${texto || '(sem texto; use as imagens)'}
     if (!state.dbId) state.dbId = novoUUID();
     const c = PDFDoc.calc(state);
     const reg = { id: state.dbId, numero: state.numero, tipo: state.tipo, cliente: (state.cliente.nome || '').trim(), total: Math.round((c.final || 0) * 100) / 100,
-      itens: state.itens.length, estado: JSON.parse(JSON.stringify(state)) };
-    const { error } = await SB.from('propostas_geradas').upsert(reg).select('id');
+      itens: state.itens.length, estado: JSON.parse(JSON.stringify(state)), ...CRM.contatoParaSalvar(state) };
+    const { data, error } = await SB.from('propostas_geradas').upsert(reg).select('id, numero, ' + CRM.COLS);
     if (error) {
       console.error(error);
       const negado = error.code === '42501' || /row-level security|permission/i.test(error.message || '');
@@ -3686,7 +4240,7 @@ ${texto || '(sem texto; use as imagens)'}
       return false;
     }
     LS.set(KEY.rasc, state);
-    salvasCarregadas = false;
+    if (data && data[0]) CRM.aoSalvar({ ...data[0], cliente: reg.cliente, total: reg.total, itens: reg.itens, tipo: reg.tipo });
     if (!silencioso) toast('Proposta salva para a equipe.');
     return true;
   }
@@ -3696,46 +4250,17 @@ ${texto || '(sem texto; use as imagens)'}
   function abrirGaveta(id) {
     fecharGaveta();
     gavetaAberta = $(id); gavetaAberta.hidden = false; $('#veu').hidden = false;
-    if (id === '#gav-salvas') { carregarSalvas(); $('#salvas-q').focus(); }
     if (id === '#gav-precos') { renderPrecos(); $('#pr-q').focus(); atualizarCatalogoSeAntigo(); }
     if (id === '#gav-usuarios') Sessao.carregarUsuarios();
   }
   function fecharGaveta() { if (gavetaAberta) gavetaAberta.hidden = true; gavetaAberta = null; $('#veu').hidden = true; }
 
-  const NOME_TIPO = { particular: 'Particular', ocupacional: 'Ocupacional', documentos: 'Documentos SST' };
-  async function carregarSalvas() {
-    if (salvasCarregadas) { renderSalvas(); return; }
-    $('#salvas').innerHTML = '<div class="vazio"><span class="spin" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>Carregando propostas</div>';
-    const { data, error } = await SB.from('propostas_geradas').select('id, numero, tipo, cliente, total, itens, criado_por, criado_em, atualizado_em')
-      .order('atualizado_em', { ascending: false }).limit(500);
-    if (error) { $('#salvas').innerHTML = '<div class="vazio">Não foi possível carregar as propostas. Verifique a internet e tente de novo.</div>'; return; }
-    salvasLista = data; salvasCarregadas = true;
-    renderSalvas();
-  }
-  function renderSalvas() {
-    $('#salvas-onde').textContent = 'Compartilhadas com a equipe';
-    const q = Leitor.norm($('#salvas-q').value || '');
-    const lista = salvasLista.filter(r => !q || Leitor.norm(`${r.cliente || ''} ${r.numero}`).includes(q));
-    const box = $('#salvas');
-    if (!lista.length) { box.innerHTML = `<div class="vazio">${q ? 'Nenhuma proposta encontrada.' : 'Nenhuma proposta salva ainda. Use Salvar ou Baixar PDF para guardar a proposta aqui.'}</div>`; return; }
-    box.innerHTML = lista.map(r => `<div class="salva" data-id="${esc(r.id)}">
-      <div><b>${esc(r.cliente || 'Sem nome')}</b><small class="num">${NOME_TIPO[r.tipo] || r.tipo} · Nº ${esc(r.numero)} · ${new Date(r.atualizado_em).toLocaleDateString('pt-BR')} · ${r.itens} ${r.itens === 1 ? 'item' : 'itens'} · ${esc(brl(+r.total || 0))}${r.criado_por === EU.id ? ' · por você' : ''}</small></div>
-      <div class="row"><button type="button" class="btn sm pri" data-abrir="${esc(r.id)}">Abrir</button>${r.criado_por === EU.id || ADMIN ? `<button type="button" class="btn sm ghost" data-excluir="${esc(r.id)}">Excluir</button>` : ''}</div>
-    </div>`).join('');
-  }
-  async function excluirSalva(id, confirmado) {
-    const row = $(`.salva[data-id="${CSS.escape(id)}"] .row`);
-    if (!confirmado) { row.innerHTML = `<span class="hint" style="margin:0">Excluir?</span><button type="button" class="btn sm" data-excluir-sim="${esc(id)}">Sim</button><button type="button" class="btn sm ghost" data-excluir-nao>Não</button>`; return; }
-    const { data, error } = await SB.from('propostas_geradas').delete().eq('id', id).select('id');
-    if (error || !data || !data.length) { toast(error ? 'Não foi possível excluir. Verifique a internet.' : 'Só quem criou a proposta ou um administrador pode excluir.', 4000); renderSalvas(); return; }
-    salvasLista = salvasLista.filter(r => r.id !== id);
-    if (state.dbId === id) state.dbId = null;
-    renderSalvas(); toast('Proposta excluída.');
-  }
   async function abrirSalva(id) {
-    const { data, error } = await SB.from('propostas_geradas').select('id, estado').eq('id', id).maybeSingle();
+    const { data, error } = await SB.from('propostas_geradas').select('id, numero, estado, ' + CRM.COLS).eq('id', id).maybeSingle();
     if (error || !data) { toast('Não foi possível abrir a proposta.'); return; }
     state = migrar(data.estado); state.exemplo = false; state.dbId = data.id;
+    LS.set(KEY.rasc, state);
+    CRM.aoAbrir({ ...data, estado: undefined });
     anexos = []; renderAnexos();
     sincronizarItensSeguro();
     renderAll(); changed(); fecharGaveta(); toast(`Proposta ${state.numero} aberta.`);
@@ -3930,6 +4455,7 @@ ${texto || '(sem texto; use as imagens)'}
     $('#bt-nova').onclick = () => {
       const t = state.tipo;
       state = novoEstado(t);
+      CRM.aoNova();
       $('#req').value = '';
       anexos = []; renderAnexos();
       renderAll(); changed();
@@ -3944,21 +4470,12 @@ ${texto || '(sem texto; use as imagens)'}
     $('#bt-copiar').onclick = copiarTexto;
     $('#bt-salvar').onclick = () => salvar(false);
     $('#copia-ok').onclick = () => { $('#modal-copia').hidden = true; };
-    $('#bt-salvas').onclick = () => abrirGaveta('#gav-salvas');
     $('#bt-precos').onclick = () => abrirGaveta('#gav-precos');
     document.addEventListener('opus:usuarios', () => abrirGaveta('#gav-usuarios'));
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') atualizarCatalogoSeAntigo(); });
     $('#veu').onclick = fecharGaveta;
     for (const b of $$('[data-fechar]')) b.onclick = fecharGaveta;
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#modal-copia').hidden) $('#modal-copia').hidden = true; else if (gavetaAberta) fecharGaveta(); } });
-
-    $('#salvas-q').addEventListener('input', renderSalvas);
-    $('#salvas').addEventListener('click', e => {
-      const a = e.target.closest('[data-abrir]'); if (a) return abrirSalva(a.dataset.abrir);
-      const x = e.target.closest('[data-excluir]'); if (x) return excluirSalva(x.dataset.excluir, false);
-      const s = e.target.closest('[data-excluir-sim]'); if (s) return excluirSalva(s.dataset.excluirSim, true);
-      if (e.target.closest('[data-excluir-nao]')) renderSalvas();
-    });
 
     const gs = $('#pr-g'), ng = $('#ni-g');
     gs.innerHTML = '<option value="">Todos os grupos</option>' + Object.entries(GRUPOS).map(([k, v]) => `<option value="${k}">${esc(v.nome)}</option>`).join('');
@@ -4039,6 +4556,12 @@ Obrigada!`;
     setVista('editar');
     renderAll();
     agendarPreview(50);
+    CRM.iniciar({
+      sb: SB, eu: EU, admin: ADMIN, toast, esc, brl, norm: Leitor.norm,
+      estado: () => state, abrir: abrirSalva, nova: () => $('#bt-nova').click(),
+      abrirGaveta, fecharGaveta,
+      aoExcluir: id => { if (state.dbId === id) { state.dbId = null; LS.set(KEY.rasc, state); } }
+    });
   }
   function aplicarLeituraInicial(res) {
     for (const x of res.itens) { const c = CATID.get(x.id); if (c) state.itens.push(itemDoCatalogo(c, x.qtd, 'auto')); }
