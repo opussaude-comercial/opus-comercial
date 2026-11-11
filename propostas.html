@@ -446,6 +446,23 @@ input[type=email] { width: 100%; background: var(--surface-2); border: 1px solid
 .gav-h .pill { white-space: nowrap; }
 @media (max-width: 520px) { .gav-ficha .gav-h #fi-num { display: none; } }
 
+/* modelo da proposta ocupacional */
+.modelo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.modelo-l { font-size: 11.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.modelo-ops { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.modelo-ops button { text-align: left; display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); border-radius: var(--r-sm); padding: 9px 11px; cursor: pointer; font: inherit; min-width: 0; }
+.modelo-ops button b { font-size: 13.5px; }
+.modelo-ops button small { font-size: 12px; color: var(--muted); }
+.modelo-ops button:hover { border-color: var(--brand-2); }
+.modelo-ops button:focus-visible { outline: 2px solid var(--brand-2); outline-offset: 2px; }
+.modelo-ops button[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); box-shadow: inset 0 0 0 1px var(--brand); }
+.modelo-ops button[aria-pressed="true"] b { color: var(--brand); }
+body[data-tipo="documentos"] .so-ocup { display: none !important; }
+body[data-tipo="ocupacional"][data-modelo="simples"] .so-completa { display: none !important; }
+.so-simples { display: none !important; }
+body[data-tipo="ocupacional"][data-modelo="simples"] .so-simples { display: flex !important; }
+@media (max-width: 420px) { .modelo-ops { grid-template-columns: minmax(0, 1fr); } }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -649,7 +666,14 @@ input[type=email] { width: 100%; background: var(--surface-2); border: 1px solid
         </div>
       </div>
       <div id="op-ocup" hidden>
-        <div class="so-exames">
+        <div class="modelo so-ocup" role="group" aria-labelledby="lb-modelo">
+          <span class="modelo-l" id="lb-modelo">Modelo da proposta</span>
+          <div class="modelo-ops">
+            <button type="button" data-modelo="completa" aria-pressed="true"><b>Completa</b><small>Capa, apresentação, seções técnicas e aceite</small></button>
+            <button type="button" data-modelo="simples" aria-pressed="false"><b>Simples</b><small>Uma página, como o orçamento particular</small></button>
+          </div>
+        </div>
+        <div class="so-exames so-completa">
         <p class="hint" style="margin:0 0 8px" id="secoes-hint">Seções da proposta técnica (a tabela de exames, contatos, LGPD e condições comerciais sempre entram):</p>
         <div class="chks">
           <label class="chk so-exames"><input type="checkbox" data-sec="estrutura"><span>Nossa estrutura (fotos)</span></label>
@@ -667,8 +691,9 @@ input[type=email] { width: 100%; background: var(--surface-2); border: 1px solid
             <select id="op-qtd"><option value="auto">Automático</option><option value="sim">Sempre mostrar</option><option value="nao">Não mostrar</option></select>
           </label>
           <label class="chk so-exames" style="align-self:end"><input type="checkbox" id="op-total"><span>Mostrar valor total</span></label>
-          <label class="f span2 so-exames"><span>Texto de apresentação</span><textarea id="op-apres" rows="3"></textarea></label>
-          <div class="span2 row so-exames" style="margin-top:-4px"><button type="button" class="btn sm ghost" id="bt-apres-padrao">Usar texto padrão</button></div>
+          <label class="chk span2 so-simples"><input type="checkbox" id="op-orient-o"><span>Incluir orientações de atendimento (autorização, horários e prazo do ASO)</span></label>
+          <label class="f span2 so-exames so-completa"><span>Texto de apresentação</span><textarea id="op-apres" rows="3"></textarea></label>
+          <div class="span2 row so-exames so-completa" style="margin-top:-4px"><button type="button" class="btn sm ghost" id="bt-apres-padrao">Usar texto padrão</button></div>
           <label class="f span2"><span>Forma de pagamento</span><textarea id="op-pag" rows="2"></textarea></label>
           <label class="f span2"><span>Prazo de entrega dos documentos</span><input type="text" id="op-prazodocs"></label>
         </div>
@@ -1962,6 +1987,110 @@ const PDFDoc = (() => {
     };
   }
 
+  /* ---------- PROPOSTA OCUPACIONAL SIMPLES (uma página, no formato do orçamento particular) ---------- */
+  function ocupacionalSimples(st, ctx) {
+    const hoje = dataDe(st.data);
+    const c = calc(st);
+    const o = st.ocup;
+    const cliente = (st.cliente.nome || '').trim();
+    const exames = c.linhas.filter(l => l.g !== 'doc');
+    const docs = c.linhas.filter(l => l.g === 'doc');
+    const content = [];
+
+    content.push({
+      columns: [
+        { width: '*', stack: [
+          { text: 'ORÇAMENTO', fontSize: 24, bold: true, color: C.verde, characterSpacing: 1.5 },
+          { text: o.objeto || 'Realização de Exames Ocupacionais', fontSize: 10.5, color: C.suave, margin: [0, 1, 0, 0] }
+        ] },
+        { width: 190, table: { widths: [62, '*'], body: [
+          [k('Nº'), v(st.numero || '')], [k('Data'), v(dataLonga(hoje))], [k('Validade'), v(`${st.validade || 30} dias`)]
+        ] }, layout: zebra({ head: false }) }
+      ], columnGap: 16, margin: [0, 0, 0, 14]
+    });
+
+    const cli = [[k('Empresa'), v(cliente || '________________________________________', { bold: !!cliente, fontSize: 10 })]];
+    if (st.cliente.cnpj) cli.push([k('CNPJ'), v(st.cliente.cnpj)]);
+    if (st.cliente.contato) cli.push([k('A/C'), v(st.cliente.contato)]);
+    content.push({ table: { widths: [70, '*'], body: cli }, layout: zebra({ head: false }), margin: [0, 0, 0, 12] });
+
+    const qtdCol = o.mostrarQtd === 'sim' || (o.mostrarQtd !== 'nao' && c.algumaQtd);
+    const prazoCol = exames.some(l => l.prazo);
+    const head = ['Exame'], widths = ['*'], aligns = ['left'];
+    if (qtdCol) { head.push('Qtd.'); widths.push(34); aligns.push('center'); }
+    head.push(qtdCol ? 'Valor unit.' : 'Valor'); widths.push(74); aligns.push('right');
+    if (qtdCol) { head.push('Subtotal'); widths.push(78); aligns.push('right'); }
+    if (prazoCol) { head.push('Liberação'); widths.push(88); aligns.push('center'); }
+    const rows = exames.map(l => {
+      const r = [{ stack: [{ text: l.nome, fontSize: 9.3 }].concat(l.info ? [{ text: l.info, fontSize: 7.8, color: C.suave, margin: [0, 1, 0, 0] }] : []) }];
+      if (qtdCol) r.push(v(String(l.qtd), { alignment: 'center' }));
+      r.push(v(brl(l.preco), { alignment: 'right', bold: !qtdCol }));
+      if (qtdCol) r.push(v(brl(l.sub), { alignment: 'right', bold: true }));
+      if (prazoCol) r.push(v(l.prazo || '', { alignment: 'center', fontSize: 8.3 }));
+      return r;
+    });
+    if (!rows.length && !docs.length) rows.push([{ text: 'Nenhum exame incluído.', italics: true, color: C.suave, colSpan: head.length }, ...Array(head.length - 1).fill({})]);
+    if (rows.length) content.push(tabela(head, rows, widths, aligns));
+
+    if (docs.length) {
+      content.push(tabela(['Documento de SST', 'Valor'], docs.map(l => [
+        { stack: [{ text: l.qtd > 1 ? `${l.nome} (${l.qtd}x)` : l.nome, fontSize: 9.3, bold: true, color: C.verde }] },
+        v(brl(l.sub), { alignment: 'right', bold: true })
+      ]), ['*', 110], ['left', 'right']));
+    }
+
+    const mostrarTotal = c.temFinal || c.algumaQtd || o.mostrarTotal;
+    if (mostrarTotal && c.linhas.length) {
+      const tot = [];
+      if (c.desconto > 0) {
+        tot.push([k('Soma dos itens'), v(brl(c.soma), { alignment: 'right' })]);
+        tot.push([k('Desconto'), v('- ' + brl(c.desconto), { alignment: 'right' })]);
+      }
+      tot.push([{ text: 'TOTAL', bold: true, color: C.branco, fontSize: 10.5 }, { text: brl(c.final), bold: true, color: C.branco, fontSize: 12.5, alignment: 'right' }]);
+      content.push({ columns: [{ width: '*', text: '' }, { width: 250, table: { widths: ['*', 105], body: tot }, layout: { fillColor: (i) => i === tot.length - 1 ? C.verde : C.claro, hLineColor: () => C.borda, vLineColor: () => C.borda, hLineWidth: () => 0.6, vLineWidth: () => 0.6, paddingTop: () => 5, paddingBottom: () => 5, paddingLeft: () => 7, paddingRight: () => 7 } }], margin: [0, 0, 0, 16], unbreakable: true });
+    }
+
+    const cond = [['Forma de pagamento', o.pagamento || 'O pagamento será realizado em 30 (trinta) dias corridos após a emissão da Nota Fiscal, via PIX ou transferência bancária.']];
+    if (docs.length && o.prazoDocs) cond.push(['Entrega dos documentos', o.prazoDocs.charAt(0).toUpperCase() + o.prazoDocs.slice(1)]);
+    content.push({ stack: [
+      { text: 'CONDIÇÕES', bold: true, color: C.verde, fontSize: 10, characterSpacing: 0.6, margin: [0, 0, 0, 6] },
+      { table: { widths: [120, '*'], body: cond.map(([a, b]) => [k(a), v(b)]) }, layout: zebra({ head: false }) }
+    ], unbreakable: true, margin: [0, 0, 0, 12] });
+
+    if (o.orientacoes !== false && exames.length) {
+      const ori = [
+        [{ text: 'Autorização: ', bold: true }, { text: 'enviar com 1 dia útil de antecedência para atendimento.clinicaopussaude@gmail.com.' }],
+        [{ text: 'Horário: ', bold: true }, { text: 'seg. a sex., das 06h às 17h; sáb., das 06h às 11h. Senhas por ordem de chegada, das 06h30 às 10h.' }],
+        [{ text: 'Resultados: ', bold: true }, { text: 'ASO digital no WebSigmo em 24 a 48 horas úteis; exames externos em 3 a 5 dias úteis.' }]
+      ];
+      if (st.observacoes && st.observacoes.trim()) ori.push([{ text: 'Observações: ', bold: true }, { text: st.observacoes.trim() }]);
+      content.push({ stack: [
+        { text: 'ATENDIMENTO', bold: true, color: C.verde, fontSize: 10, characterSpacing: 0.6, margin: [0, 0, 0, 5] },
+        { ul: ori.map(t => ({ text: t, fontSize: 8.8, margin: [0, 0, 0, 2.5] })), markerColor: C.barra }
+      ], margin: [0, 0, 0, 12], unbreakable: true });
+    } else if (st.observacoes && st.observacoes.trim()) {
+      content.push(par([{ text: 'Observações: ', bold: true, color: C.verde }, { text: st.observacoes.trim() }]));
+    }
+
+    const contato = (rot, tel, email) => ({ stack: [
+      { text: [{ text: rot + '   ', bold: true, color: C.verde, fontSize: 8.5 }, { text: tel, bold: true, fontSize: 11.5 }] },
+      { text: email, fontSize: 8.3, color: C.suave, margin: [0, 1, 0, 0] }
+    ] });
+    content.push({ table: { widths: ['*', '*'], body: [[
+      contato('Agendamento de exames', '(94) 3346-1988', 'atendimento.clinicaopussaude@gmail.com'),
+      contato('Comercial', OPUS.comercial, 'comercial@clinicaopussaude.com.br')
+    ]] }, layout: { fillColor: () => C.cinza, hLineWidth: () => 0.7, vLineWidth: () => 0, hLineColor: () => C.borda, paddingTop: () => 5, paddingBottom: () => 5, paddingLeft: () => 8 }, unbreakable: true });
+
+    return {
+      pageSize: 'A4', pageOrientation: 'portrait', pageMargins: [50, 92, 50, 100],
+      info: { title: `Orçamento OPUS${cliente ? ' - ' + cliente : ''}`, author: 'OPUS Saúde Acessível', subject: o.objeto || 'Exames ocupacionais' },
+      background: () => ctx.has('timbrado') ? { image: 'timbrado', width: PAGE.w, height: PAGE.h } : null,
+      footer: (a, t) => ({ ...rodape(`OPUS Saúde Acessível  |  CNPJ: ${OPUS.cnpj}  |  Rua D, 402, Cidade Nova, Parauapebas-PA`)(a, t), margin: [50, 10, 50, 0] }),
+      defaultStyle: { font: 'Roboto', fontSize: 9.3, color: C.texto, lineHeight: 1.15 },
+      content, images: ctx.images
+    };
+  }
+
   /* ---------- textos para copiar ---------- */
   function textoParticular(st) {
     const c = calc(st);
@@ -2011,7 +2140,7 @@ const PDFDoc = (() => {
     L.push('Pagamento: ' + (st.ocup.pagamento || '30 dias após a emissão da Nota Fiscal, via PIX ou transferência bancária.'));
     L.push(`Validade da proposta: ${st.validade || 30} dias.`);
     L.push('');
-    L.push('A proposta completa segue em anexo, em PDF.');
+    L.push(st.tipo === 'ocupacional' && st.ocup.modelo === 'simples' ? 'O orçamento segue em anexo, em PDF.' : 'A proposta completa segue em anexo, em PDF.');
     L.push('');
     L.push('Atenciosamente,');
     L.push('Joandson Barros');
@@ -2021,7 +2150,7 @@ const PDFDoc = (() => {
   }
 
   function imagensNecessarias(st) {
-    if (st.tipo === 'particular' || st.tipo === 'documentos') return ['timbrado'];
+    if (st.tipo === 'particular' || st.tipo === 'documentos' || st.ocup.modelo === 'simples') return ['timbrado'];
     const S = st.ocup.secoes;
     const l = ['capa', 'timbrado'];
     if (S.estrutura) l.push('estrutura1', 'estrutura2', 'estrutura3', 'estrutura4', 'estrutura5');
@@ -2034,6 +2163,7 @@ const PDFDoc = (() => {
     const ctx = { images, has: (nome) => !!images[nome] };
     if (st.tipo === 'particular') return particular(st, ctx);
     if (st.tipo === 'documentos') return documentos(st, ctx);
+    if (st.ocup && st.ocup.modelo === 'simples') return ocupacionalSimples(st, ctx);
     return ocupacional(st, ctx);
   }
 
@@ -3416,7 +3546,7 @@ const CRM = (() => {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* sem armazenamento local */ } }
   };
-  const KEY = { rasc: 'opus-propostas:rascunho' };
+  const KEY = { rasc: 'opus-propostas:rascunho', modelo: 'opus-pref:modelo-ocupacional' };
   const brl = PDFDoc.brl;
   let SB = null, EU = null, ADMIN = false;   // cliente Supabase, usuário logado e se é administrador
 
@@ -3498,7 +3628,8 @@ const CRM = (() => {
         objeto: OBJETO[tipo] || OBJETO.ocupacional,
         secoes: { estrutura: true, pcmso: true, esocial: true, aso: true, laboratorio: true, equipamentos: true, aceite: true, institucional: true },
         apresentacao: '', pagamento: 'O pagamento será realizado em 30 (trinta) dias corridos após a emissão da Nota Fiscal, via PIX ou transferência bancária.',
-        prazoDocs: 'de 3 a 4 dias após o recebimento das informações da empresa.', mostrarQtd: 'auto', mostrarTotal: false
+        prazoDocs: 'de 3 a 4 dias após o recebimento das informações da empresa.', mostrarQtd: 'auto', mostrarTotal: false,
+        modelo: LS.get(KEY.modelo, 'completa') === 'simples' ? 'simples' : 'completa', orientacoes: true
       },
       exemplo: false
     };
@@ -3507,7 +3638,7 @@ const CRM = (() => {
     const b = novoEstado(s?.tipo || 'particular');
     if (!s || typeof s !== 'object') return b;
     return { ...b, ...s, cliente: { ...b.cliente, ...(s.cliente || {}) }, pagamento: { ...b.pagamento, ...(s.pagamento || {}) },
-      ocup: { ...b.ocup, ...(s.ocup || {}), secoes: { ...b.ocup.secoes, ...((s.ocup || {}).secoes || {}) } }, itens: Array.isArray(s.itens) ? s.itens : [] };
+      ocup: { ...b.ocup, ...(s.ocup || {}), modelo: s.ocup ? (s.ocup.modelo || 'completa') : b.ocup.modelo, secoes: { ...b.ocup.secoes, ...((s.ocup || {}).secoes || {}) } }, itens: Array.isArray(s.itens) ? s.itens : [] };
   }
   let state;
 
@@ -3880,6 +4011,9 @@ ${texto || '(sem texto; use as imagens)'}
     const part = state.tipo === 'particular';
     const docs = state.tipo === 'documentos';
     document.body.dataset.tipo = state.tipo;
+    document.body.dataset.modelo = state.ocup.modelo === 'simples' ? 'simples' : 'completa';
+    for (const b of $$('[data-modelo]')) b.setAttribute('aria-pressed', String(b.dataset.modelo === document.body.dataset.modelo));
+    $('#op-orient-o').checked = state.ocup.orientacoes !== false;
     for (const t of Object.keys(PREFIXO)) $('#tipo-' + t).setAttribute('aria-pressed', String(state.tipo === t));
     $('#h-it').textContent = docs ? 'Documentos e valores' : part ? 'Exames e valores' : 'Exames, documentos e valores';
     $('#add').placeholder = docs ? 'Adicionar outro item: digite parte do nome' : 'Adicionar exame ou procedimento: digite parte do nome';
@@ -4376,6 +4510,12 @@ ${texto || '(sem texto; use as imagens)'}
     $('#op-valores').onchange = e => { state.mostrarValores = e.target.checked; changed(); };
     $('#op-orient').onchange = e => { state.orientacoes = e.target.checked; changed(); };
     $('#op-total').onchange = e => { state.ocup.mostrarTotal = e.target.checked; changed(); };
+    $('#op-orient-o').onchange = e => { state.ocup.orientacoes = e.target.checked; changed(); };
+    for (const b of $$('[data-modelo]')) b.onclick = () => {
+      state.ocup.modelo = b.dataset.modelo;
+      LS.set(KEY.modelo, state.ocup.modelo);
+      renderForm(); changed();
+    };
     $('#op-qtd').onchange = e => { state.ocup.mostrarQtd = e.target.value; changed(); };
     for (const el of $$('[data-sec]')) el.onchange = () => { state.ocup.secoes[el.dataset.sec] = el.checked; $('#op-apres').placeholder = PDFDoc.apresentacaoPadrao(state); changed(); };
     $('#bt-apres-padrao').onclick = () => { state.ocup.apresentacao = ''; renderForm(); changed(); };
